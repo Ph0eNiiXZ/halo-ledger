@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Ledger — Private Tracker</title>
+<title>Ledger: Private Tracker</title>
 <meta name="theme-color" content="#12161B">
 <meta name="description" content="A private, on-device income and expense tracker. No account, no cloud, no sync.">
 <link rel="manifest" href="./manifest.json">
@@ -43,6 +43,12 @@
 }
 *{box-sizing:border-box;}
 html,body{margin:0;padding:0;background:var(--bg);}
+html{ scrollbar-width:thin; scrollbar-color:var(--line-strong) transparent; }
+*{ scrollbar-width:thin; scrollbar-color:var(--line-strong) transparent; }
+::-webkit-scrollbar{ width:6px; height:6px; }
+::-webkit-scrollbar-track{ background:transparent; }
+::-webkit-scrollbar-thumb{ background:var(--line-strong); border-radius:10px; }
+::-webkit-scrollbar-thumb:hover{ background:var(--ink-faint); }
 body{
   font-family:var(--font-body);
   color:var(--ink);
@@ -302,8 +308,15 @@ input,select{font-family:inherit;}
   border-radius:6px;
   background:var(--surface-3);
   overflow:hidden;
+  position:relative;
 }
 .bar-fill{height:100%; border-radius:6px; transition:width 400ms ease;}
+.bar-marker{
+  position:absolute; top:-3px; bottom:-3px; width:2px;
+  background:var(--ink); border-radius:1px; opacity:0.8;
+}
+.goal-card{margin-bottom:0;}
+.goal-sub{font-size:11.5px; color:var(--ink-faint); margin-top:8px;}
 
 /* ============ MONTH NAV ============ */
 .month-nav{
@@ -399,6 +412,12 @@ select.field, .select-native{
 .legend-row{display:flex; gap:16px; margin-bottom:16px;}
 .legend-item{display:flex; align-items:center; gap:6px; font-size:11.5px; color:var(--ink-dim);}
 .legend-item .dot{width:8px;height:8px;border-radius:2px;}
+.insight-row{
+  font-size:13px; line-height:1.5; color:var(--ink-dim);
+  padding:9px 0; border-bottom:1px dotted var(--line);
+}
+.insight-row:last-child{border-bottom:none; padding-bottom:0;}
+.insight-row:first-child{padding-top:0;}
 
 /* ============ STATS GRID ============ */
 .stat-grid{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:18px;}
@@ -465,6 +484,118 @@ select.field, .select-native{
 .theme-name{font-family:var(--font-mono); font-size:11.5px; color:var(--ink); display:flex; align-items:center; justify-content:space-between;}
 .theme-name .check{color:var(--green); font-size:13px;}
 
+/* ============ VISION BOARD ============ */
+.board-hint{
+  font-size:11.5px; color:var(--ink-faint); text-align:center; margin-bottom:14px; line-height:1.5;
+}
+.board-canvas{
+  position:relative; width:100%; aspect-ratio:3/4;
+  background:
+    radial-gradient(circle, var(--line-strong) 1px, transparent 1.5px) 0 0/18px 18px,
+    var(--surface);
+  border:1px solid var(--line-strong);
+  border-radius:var(--radius);
+  overflow:hidden;
+  touch-action:none;
+}
+.board-item{
+  position:absolute;
+  cursor:grab;
+  user-select:none;
+  -webkit-user-select:none;
+  transform-origin:center center;
+  touch-action:none;
+}
+.board-item.selected{ outline:2px dashed var(--green); outline-offset:5px; z-index:999 !important; }
+.board-photo-img{ width:100%; height:100%; object-fit:cover; display:block; border-radius:5px; pointer-events:none; }
+.frame-polaroid{
+  background:#F2EEE2; padding:7% 7% 20% 7%; border-radius:2px;
+  box-shadow:0 8px 18px rgba(0,0,0,0.4);
+}
+.frame-polaroid .board-photo-img{ border-radius:0; }
+.polaroid-caption{
+  position:absolute; bottom:5%; left:0; right:0; text-align:center;
+  font-family:var(--font-display); font-weight:600; font-size:min(3.2vw,12px); color:#3a3a3a; padding:0 6%;
+  pointer-events:none; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+.frame-washi{ box-shadow:0 8px 18px rgba(0,0,0,0.4); border-radius:5px; }
+.washi-tape{
+  position:absolute; top:-8%; left:50%; transform:translateX(-50%) rotate(-4deg);
+  width:46%; height:16%; opacity:0.88; border-radius:2px; z-index:2; pointer-events:none;
+  background:repeating-linear-gradient(45deg, var(--amber), var(--amber) 6px, rgba(255,255,255,0.18) 6px, rgba(255,255,255,0.18) 12px);
+  box-shadow:0 2px 6px rgba(0,0,0,0.25);
+}
+.board-caption-tag{
+  position:absolute; bottom:-9%; left:0; right:0; text-align:center;
+  font-family:var(--font-mono); font-size:min(2.6vw,10px); color:var(--ink-faint);
+  pointer-events:none; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+.board-sticker{ display:flex; align-items:center; justify-content:center; }
+.sticker-emoji{ font-size:min(9vw, 56px); line-height:1; width:100%; text-align:center; pointer-events:none; }
+.board-text-item{
+  display:flex; align-items:center; justify-content:center; padding:10%;
+  background:var(--surface-2); border:1px solid var(--line-strong); border-radius:10px;
+  box-shadow:0 6px 16px rgba(0,0,0,0.3);
+}
+.board-text-content{
+  font-family:var(--font-display); font-weight:600; font-size:min(3.6vw,15px); text-align:center; color:var(--ink);
+  overflow-wrap:break-word; pointer-events:none; line-height:1.35;
+}
+.board-goal-badge{
+  position:absolute; top:-8px; left:-8px; background:var(--green); color:var(--bg);
+  font-family:var(--font-mono); font-size:9px; font-weight:700; padding:2px 6px; border-radius:10px;
+  pointer-events:none; white-space:nowrap; max-width:120%; overflow:hidden; text-overflow:ellipsis; z-index:3;
+}
+.resize-handle{
+  position:absolute; right:-9px; bottom:-9px; width:20px; height:20px;
+  background:var(--ink); border-radius:50%; border:2px solid var(--bg);
+  cursor:nwse-resize; display:none; z-index:4;
+}
+.rotate-handle{
+  position:absolute; left:50%; top:-30px; width:18px; height:18px;
+  background:var(--green); border-radius:50%; border:2px solid var(--bg);
+  transform:translateX(-50%); cursor:grab; display:none; z-index:4;
+}
+.board-item.selected .resize-handle, .board-item.selected .rotate-handle{ display:block; }
+.board-toolbar{
+  position:fixed; bottom:calc(78px + var(--safe-bottom)); left:50%; transform:translateX(-50%);
+  display:flex; gap:6px; background:var(--surface-2); border:1px solid var(--line-strong);
+  border-radius:30px; padding:8px 9px; box-shadow:0 10px 24px rgba(0,0,0,0.45); z-index:60;
+}
+.board-tool-btn{
+  width:36px; height:36px; border-radius:50%; border:none; background:var(--surface-3);
+  color:var(--ink); font-size:15px; display:flex; align-items:center; justify-content:center; cursor:pointer;
+}
+.board-tool-btn.danger{ color:var(--red); }
+.board-emoji-btn{ font-size:19px !important; padding:8px 11px !important; }
+
+/* ============ PIN LOCK ============ */
+#lock-root{
+  display:none; position:fixed; inset:0; z-index:90; background:var(--bg);
+  align-items:center; justify-content:center;
+}
+.lock-screen{ display:flex; flex-direction:column; align-items:center; gap:18px; padding:24px; width:100%; max-width:340px; }
+.lock-stamp{ width:56px; height:56px; border:2px solid var(--line-strong); border-radius:50%; display:flex; align-items:center; justify-content:center; font-family:var(--font-mono); font-size:22px; color:var(--green); }
+.lock-title{ font-family:var(--font-display); font-size:18px; font-weight:700; }
+.lock-dots{ display:flex; gap:14px; }
+.lock-dot{ width:14px; height:14px; border-radius:50%; border:1.5px solid var(--line-strong); }
+.lock-dot.filled{ background:var(--ink); border-color:var(--ink); }
+.lock-error{ font-size:12px; color:var(--red); font-family:var(--font-mono); height:16px; }
+.lock-keypad{ display:grid; grid-template-columns:repeat(3,1fr); gap:14px; width:100%; max-width:260px; }
+.lock-key{ aspect-ratio:1; border-radius:50%; border:1px solid var(--line-strong); background:var(--surface); color:var(--ink); font-size:20px; font-family:var(--font-mono); cursor:pointer; }
+.lock-key:active{ background:var(--surface-3); }
+.lock-forgot{ background:none; border:none; color:var(--ink-faint); font-family:var(--font-mono); font-size:12px; cursor:pointer; margin-top:6px; }
+
+/* ============ CALENDAR HEATMAP ============ */
+.heat-grid{ display:grid; grid-template-columns:repeat(7,1fr); gap:4px; }
+.heat-cell{ aspect-ratio:1; border-radius:3px; background:var(--surface-3); cursor:pointer; }
+.heat-cell.empty{ background:transparent; cursor:default; }
+.heat-cell.level-1{ background:var(--amber-dim); }
+.heat-cell.level-2{ background:var(--amber); opacity:0.75; }
+.heat-cell.level-3{ background:var(--red); }
+.heat-legend{ display:flex; align-items:center; gap:6px; margin-top:10px; font-size:10.5px; color:var(--ink-faint); font-family:var(--font-mono); }
+.heat-legend span.sw{ width:10px; height:10px; border-radius:2px; display:inline-block; }
+
 /* ============ MODAL / SHEET ============ */
 .overlay{
   position:fixed; inset:0; background:rgba(8,10,13,0.6);
@@ -507,16 +638,20 @@ select.field, .select-native{
 }
 .amount-field:focus-within{border-color:var(--green);}
 .amount-field .cur{font-family:var(--font-mono); color:var(--ink-faint); font-size:16px;}
+.cur-select{
+  background:none; border:none; color:var(--ink-faint); font-family:var(--font-mono);
+  font-size:13px; outline:none; -webkit-appearance:none; appearance:none; padding-right:2px;
+}
 .amount-field input{
   border:none; background:none; outline:none; color:var(--ink);
   font-family:var(--font-mono); font-size:22px; font-weight:600; width:100%;
 }
 .scan-status{
   font-family:var(--font-mono); font-size:11.5px; color:var(--ink-faint);
-  text-align:center; margin:-6px 0 14px;
+  text-align:center; margin:10px 0 14px; line-height:1.4;
 }
 .scan-hint{
-  font-size:11px; color:var(--ink-faint); text-align:center; margin:-6px 0 16px; line-height:1.4;
+  font-size:11px; color:var(--ink-faint); text-align:center; margin:10px 0 16px; line-height:1.4;
 }
 .segmented{display:flex; background:var(--surface); border:1px solid var(--line-strong); border-radius:var(--radius-sm); padding:3px; margin-bottom:16px;}
 .seg-btn{flex:1; text-align:center; padding:9px 0; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer; color:var(--ink-faint); background:none; border:none;}
@@ -569,6 +704,14 @@ select.field, .select-native{
       <svg viewBox="0 0 24 24"><path d="M4 3h16v18l-3-2-3 2-3-2-3 2-4-2V3z"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
       <span>LEDGER</span>
     </button>
+    <button class="tab-btn" data-tab="goals">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4.2"/><circle cx="12" cy="12" r="0.6" fill="currentColor"/></svg>
+      <span>GOALS</span>
+    </button>
+    <button class="tab-btn" data-tab="board">
+      <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+      <span>BOARD</span>
+    </button>
     <button class="tab-btn" data-tab="analytics">
       <svg viewBox="0 0 24 24"><path d="M4 20V10M12 20V4M20 20v-7"/></svg>
       <span>STATS</span>
@@ -583,18 +726,19 @@ select.field, .select-native{
 </div>
 
 <div id="modal-root"></div>
+<div id="lock-root"></div>
 <div class="toast" id="toast"></div>
 
 <script>
 /* =========================================================================
-   LEDGER — private, on-device income & expense tracker
+   LEDGER: private, on-device income & expense tracker
    All data lives in IndexedDB in this browser profile. Nothing is sent
    anywhere. There is no account, no server, no analytics.
    ========================================================================= */
 
 /* ---------- tiny IndexedDB wrapper ---------- */
 const DB_NAME = 'ledgerDB';
-const DB_VERSION = 1;
+const DB_VERSION = 5;
 let dbPromise = null;
 
 function openDB(){
@@ -614,6 +758,21 @@ function openDB(){
       }
       if(!db.objectStoreNames.contains('meta')){
         db.createObjectStore('meta', { keyPath:'key' });
+      }
+      if(!db.objectStoreNames.contains('goals')){
+        db.createObjectStore('goals', { keyPath:'id', autoIncrement:true });
+      }
+      if(!db.objectStoreNames.contains('accounts')){
+        db.createObjectStore('accounts', { keyPath:'id', autoIncrement:true });
+      }
+      if(!db.objectStoreNames.contains('recurring')){
+        db.createObjectStore('recurring', { keyPath:'id', autoIncrement:true });
+      }
+      if(!db.objectStoreNames.contains('boardItems')){
+        db.createObjectStore('boardItems', { keyPath:'id', autoIncrement:true });
+      }
+      if(!db.objectStoreNames.contains('netWorthSnapshots')){
+        db.createObjectStore('netWorthSnapshots', { keyPath:'date' });
       }
     };
     req.onsuccess = () => resolve(req.result);
@@ -676,9 +835,17 @@ const CURRENCIES = {
   EUR:{symbol:'€', code:'EUR'},
   GBP:{symbol:'£', code:'GBP'},
   JPY:{symbol:'¥', code:'JPY'},
+  CNY:{symbol:'¥', code:'CNY'},
+  SGD:{symbol:'S$', code:'SGD'},
+  AUD:{symbol:'A$', code:'AUD'},
+  HKD:{symbol:'HK$', code:'HKD'},
 };
+const DEFAULT_ACCOUNTS = [
+  {name:'Cash', color:'#C98A3B', startingBalance:0, archived:false},
+  {name:'Bank', color:'#4E7DA6', startingBalance:0, archived:false},
+];
 
-/* ---------- palettes (recolors only — layout, fonts, and structure stay identical) ---------- */
+/* ---------- palettes (recolors only: layout, fonts, and structure stay identical) ---------- */
 const THEMES = {
   ledger:{
     label:'Ledger', bg:'#262B31', surface:'#2F353D', surface2:'#383F48', surface3:'#434B56',
@@ -735,6 +902,18 @@ async function ensureSeed(){
   if(!curMeta){ await dbPut('meta', {key:'currency', value:'THB'}); }
   const themeMeta = await dbGet('meta','theme');
   if(!themeMeta){ await dbPut('meta', {key:'theme', value:'ledger'}); }
+  const accts = await dbGetAll('accounts');
+  if(accts.length === 0){
+    for(const a of DEFAULT_ACCOUNTS){ await dbAdd('accounts', a); }
+  }
+  // Migrate pre-existing transactions (from before accounts existed) onto the first account.
+  const firstAccount = (await dbGetAll('accounts'))[0];
+  if(firstAccount){
+    const allTxns = await dbGetAll('transactions');
+    for(const t of allTxns){
+      if(t.accountId == null){ t.accountId = firstAccount.id; await dbPut('transactions', t); }
+    }
+  }
 }
 
 /* ---------- app state ---------- */
@@ -743,10 +922,16 @@ const state = {
   month: monthKeyOf(ymd(new Date())),
   ledgerFilter: 'all',       // all | income | expense
   ledgerCategory: 'all',
+  ledgerAccount: 'all',
   ledgerSearch: '',
   analyticsRange: 6,
+  analyticsAccount: 'all',
+  analyticsSlice: 'category',   // category | account | currency | weekday
   currency: CURRENCIES.THB,
   categories: [],
+  accounts: [],
+  pendingRecurring: [],
+  boardSelectedId: null,
   theme: 'ledger',
 };
 
@@ -793,6 +978,8 @@ function escapeHtml(s){
 }
 function catByName(name){ return state.categories.find(c => c.name === name); }
 function catColor(name){ const c = catByName(name); return c ? c.color : '#8B93A0'; }
+function accountById(id){ return state.accounts.find(a => a.id === id); }
+function txnValue(t){ return (typeof t.baseAmount === 'number') ? t.baseAmount : t.amount; }
 
 function toast(msg){
   const el = document.getElementById('toast');
@@ -814,7 +1001,10 @@ async function getTransactionsForMonth(key){
 async function monthTotals(key){
   const txns = await getTransactionsForMonth(key);
   let income=0, expense=0;
-  for(const t of txns){ if(t.type==='income') income += t.amount; else expense += t.amount; }
+  for(const t of txns){
+    if(t.type==='income') income += txnValue(t);
+    else if(t.type==='expense') expense += txnValue(t);
+  }
   return { income, expense, net: income-expense, txns };
 }
 async function categoryBreakdown(txns, type='expense'){
@@ -822,12 +1012,43 @@ async function categoryBreakdown(txns, type='expense'){
   let total = 0;
   for(const t of txns){
     if(t.type !== type) continue;
-    map[t.category] = (map[t.category]||0) + t.amount;
-    total += t.amount;
+    const val = txnValue(t);
+    map[t.category] = (map[t.category]||0) + val;
+    total += val;
   }
   const rows = Object.entries(map).map(([name,value]) => ({name, value, pct: total? (value/total*100):0}));
   rows.sort((a,b)=> b.value - a.value);
   return { rows, total };
+}
+function computeAccountBalance(accountId, allTxns){
+  const acct = accountById(accountId);
+  let bal = acct ? (acct.startingBalance||0) : 0;
+  for(const t of allTxns){
+    if(t.type === 'transfer'){
+      if(t.fromAccountId === accountId) bal -= t.amount;
+      if(t.toAccountId === accountId) bal += t.amount;
+    } else if(t.accountId === accountId){
+      if(t.type === 'income') bal += txnValue(t);
+      else if(t.type === 'expense') bal -= txnValue(t);
+    }
+  }
+  return bal;
+}
+// For categories with rollover enabled: unused budget carries forward (and overspend
+// shrinks next month's budget). Looks back up to 12 months to bound the computation.
+function effectiveBudgetForMonth(cat, monthKey, allTxns){
+  if(!cat.rollover || !cat.budget) return cat.budget;
+  let carry = 0;
+  const stopKey = addMonths(monthKey, -12);
+  let k = addMonths(monthKey, -1);
+  while(k >= stopKey){
+    const monthHasActivity = allTxns.some(t => monthKeyOf(t.date) === k);
+    if(!monthHasActivity) break; // stop once we reach a month before any recorded activity
+    const spent = allTxns.filter(t => t.type==='expense' && t.category===cat.name && monthKeyOf(t.date)===k).reduce((s,t)=>s+txnValue(t),0);
+    carry += (cat.budget - spent);
+    k = addMonths(k, -1);
+  }
+  return cat.budget + carry;
 }
 
 /* ---------- CRUD ---------- */
@@ -845,6 +1066,26 @@ async function saveCategory(cat){
 }
 async function deleteCategory(id){ await dbDelete('categories', id); await refreshCategories(); }
 
+async function refreshAccounts(){ state.accounts = await dbGetAll('accounts'); }
+async function saveAccount(acct){
+  if(acct.id){ await dbPut('accounts', acct); }
+  else { await dbAdd('accounts', acct); }
+  await refreshAccounts();
+}
+async function deleteAccount(id){ await dbDelete('accounts', id); await refreshAccounts(); }
+
+async function recordNetWorthSnapshot(){
+  if(!state.accounts.length) return;
+  const allTxns = await getAllTransactions();
+  const netWorth = state.accounts.reduce((s,a)=>s+computeAccountBalance(a.id, allTxns),0);
+  await dbPut('netWorthSnapshots', {date: ymd(new Date()), netWorth});
+}
+async function getNetWorthHistory(n){
+  const all = await dbGetAll('netWorthSnapshots');
+  all.sort((a,b) => a.date.localeCompare(b.date));
+  return all.slice(-n);
+}
+
 async function loadCurrency(){
   const m = await dbGet('meta','currency');
   state.currency = CURRENCIES[m ? m.value : 'THB'] || CURRENCIES.THB;
@@ -853,6 +1094,213 @@ async function loadCurrency(){
 async function setCurrency(code){
   await dbPut('meta', {key:'currency', value:code});
   state.currency = CURRENCIES[code];
+}
+
+/* ---------- PIN lock ---------- */
+async function hashText(text){
+  const enc = new TextEncoder().encode(text);
+  const buf = await crypto.subtle.digest('SHA-256', enc);
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+async function getPinHash(){ const m = await dbGet('meta','pinHash'); return m ? m.value : null; }
+async function setPinHash(hash){ await dbPut('meta', {key:'pinHash', value:hash}); }
+async function removePin(){ await dbDelete('meta','pinHash'); }
+
+function renderLockScreen(onSuccess){
+  const root = document.getElementById('lock-root');
+  let entered = '';
+  let busy = false;
+
+  async function checkPin(){
+    busy = true;
+    const hash = await hashText(entered);
+    const stored = await getPinHash();
+    if(hash === stored){
+      root.innerHTML = '';
+      root.style.display = 'none';
+      onSuccess();
+    } else {
+      entered = '';
+      busy = false;
+      draw(true);
+    }
+  }
+
+  function draw(error){
+    root.style.display = 'flex';
+    root.innerHTML = `
+      <div class="lock-screen">
+        <div class="lock-stamp">${state.currency.symbol}</div>
+        <div class="lock-title">Enter your PIN</div>
+        <div class="lock-dots">${Array.from({length:4}).map((_,i)=>`<span class="lock-dot ${i<entered.length?'filled':''}"></span>`).join('')}</div>
+        <div class="lock-error" style="visibility:${error?'visible':'hidden'};">Incorrect PIN, try again</div>
+        <div class="lock-keypad">
+          ${[1,2,3,4,5,6,7,8,9].map(n=>`<button class="lock-key" data-key="${n}">${n}</button>`).join('')}
+          <div></div>
+          <button class="lock-key" data-key="0">0</button>
+          <button class="lock-key" data-key="back">⌫</button>
+        </div>
+        <button class="lock-forgot" id="lock-forgot">Forgot PIN?</button>
+      </div>
+    `;
+    root.querySelectorAll('[data-key]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if(busy) return;
+        const k = btn.dataset.key;
+        if(k === 'back'){ entered = entered.slice(0,-1); draw(false); return; }
+        if(entered.length < 4) entered += k;
+        draw(false);
+        if(entered.length === 4) checkPin();
+      });
+    });
+    document.getElementById('lock-forgot').addEventListener('click', () => {
+      openConfirm("Resetting erases every transaction, category, account, goal, and board photo on this device. That's the only way back in without the PIN. Continue?", async () => {
+        await dbClear('transactions'); await dbClear('categories'); await dbClear('meta');
+        await dbClear('accounts'); await dbClear('recurring'); await dbClear('goals'); await dbClear('boardItems');
+        location.reload();
+      }, true);
+    });
+  }
+  draw(false);
+}
+
+function openPinSetupModal(hasExisting){
+  const html = `
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">${hasExisting ? 'Change PIN' : 'Set a PIN'}</div>
+    ${hasExisting ? `
+    <div class="field-group">
+      <label class="field-label">Current PIN</label>
+      <input id="pin-current" type="password" inputmode="numeric" maxlength="4" class="field" placeholder="••••">
+    </div>` : ''}
+    <div class="field-group">
+      <label class="field-label">New 4 digit PIN</label>
+      <input id="pin-new" type="password" inputmode="numeric" maxlength="4" class="field" placeholder="••••">
+    </div>
+    <div class="field-group">
+      <label class="field-label">Confirm PIN</label>
+      <input id="pin-confirm" type="password" inputmode="numeric" maxlength="4" class="field" placeholder="••••">
+    </div>
+    <div style="font-size:11px; color:var(--ink-faint); margin-bottom:14px; line-height:1.5;">
+      There is no password recovery for a local only app. If you forget this PIN, the only way back in is to erase all data on this device.
+    </div>
+    <button class="btn primary" id="pin-save">Save PIN</button>
+    ${hasExisting ? `<button class="btn danger" id="pin-remove">Remove PIN</button>` : ''}
+    <button class="btn" id="pin-cancel">Cancel</button>
+  `;
+  const ov = openOverlay(html);
+  ov.addEventListener('click', async (e) => {
+    if(e.target.id === 'pin-cancel'){ closeModal(); return; }
+    if(e.target.id === 'pin-remove'){
+      openConfirm('Remove your PIN? The app will open without a lock screen from now on.', async () => {
+        await removePin(); closeModal(); toast('PIN removed'); renderView();
+      }, true);
+      return;
+    }
+    if(e.target.id === 'pin-save'){
+      if(hasExisting){
+        const current = ov.querySelector('#pin-current').value;
+        const currentHash = await hashText(current);
+        const stored = await getPinHash();
+        if(currentHash !== stored){ toast('Current PIN is incorrect'); return; }
+      }
+      const p1 = ov.querySelector('#pin-new').value;
+      const p2 = ov.querySelector('#pin-confirm').value;
+      if(!/^\d{4}$/.test(p1)){ toast('PIN must be 4 digits'); return; }
+      if(p1 !== p2){ toast('PINs do not match'); return; }
+      const hash = await hashText(p1);
+      await setPinHash(hash);
+      closeModal(); toast('PIN saved'); renderView();
+    }
+  });
+}
+
+/* ---------- recurring transactions ---------- */
+function advanceDueDate(dateStr, frequency){
+  const d = new Date(dateStr+'T00:00:00');
+  if(frequency==='weekly'){ d.setDate(d.getDate()+7); return ymd(d); }
+  if(frequency==='yearly'){ d.setFullYear(d.getFullYear()+1); return ymd(d); }
+  // monthly: clamp to the last valid day of the target month (e.g. Jan 31 -> Feb 28, not Mar 3)
+  const origDay = d.getDate();
+  let newMonth = d.getMonth()+1, newYear = d.getFullYear();
+  if(newMonth > 11){ newMonth = 0; newYear++; }
+  const daysInNewMonth = new Date(newYear, newMonth+1, 0).getDate();
+  return ymd(new Date(newYear, newMonth, Math.min(origDay, daysInNewMonth)));
+}
+async function saveRecurring(rule){
+  if(rule.id){ await dbPut('recurring', rule); }
+  else { await dbAdd('recurring', rule); }
+}
+async function deleteRecurring(id){ await dbDelete('recurring', id); }
+
+// Runs at boot: silently posts anything due whose rule is set to auto-post
+// (catching up if the app wasn't opened for a while), and queues anything
+// that needs a manual confirm/skip into state.pendingRecurring.
+async function processRecurring(){
+  const rules = await dbGetAll('recurring');
+  const today = ymd(new Date());
+  const pending = [];
+  for(const rule of rules){
+    if(!rule.active) continue;
+    if(rule.autoPost){
+      let guard = 0;
+      while(rule.nextDueDate <= today && guard < 24){
+        await saveTransaction({
+          type: rule.type, amount: rule.amount, category: rule.category,
+          accountId: rule.accountId, note: rule.note || '', date: rule.nextDueDate,
+          currency: state.currency.code, fxRate: 1, baseAmount: rule.amount,
+          createdAt: Date.now(),
+        });
+        rule.lastPostedDate = rule.nextDueDate;
+        rule.nextDueDate = advanceDueDate(rule.nextDueDate, rule.frequency);
+        guard++;
+      }
+      await dbPut('recurring', rule);
+    } else if(rule.nextDueDate <= today){
+      pending.push(rule);
+    }
+  }
+  state.pendingRecurring = pending;
+}
+async function confirmRecurring(id){
+  const rule = await dbGet('recurring', id);
+  if(!rule) return;
+  await saveTransaction({
+    type: rule.type, amount: rule.amount, category: rule.category,
+    accountId: rule.accountId, note: rule.note || '', date: rule.nextDueDate,
+    currency: state.currency.code, fxRate: 1, baseAmount: rule.amount,
+    createdAt: Date.now(),
+  });
+  rule.lastPostedDate = rule.nextDueDate;
+  rule.nextDueDate = advanceDueDate(rule.nextDueDate, rule.frequency);
+  await dbPut('recurring', rule);
+  state.pendingRecurring = state.pendingRecurring.filter(r => r.id !== id);
+}
+async function skipRecurring(id){
+  const rule = await dbGet('recurring', id);
+  if(!rule) return;
+  rule.nextDueDate = advanceDueDate(rule.nextDueDate, rule.frequency);
+  await dbPut('recurring', rule);
+  state.pendingRecurring = state.pendingRecurring.filter(r => r.id !== id);
+}
+
+/* ---------- multi-currency: live exchange rate lookup ---------- */
+async function fetchFxRate(fromCode, toCode){
+  if(fromCode === toCode) return 1;
+  const cacheKey = `fx_${fromCode}_${toCode}`;
+  try{
+    const res = await fetch(`https://api.frankfurter.app/latest?amount=1&from=${fromCode}&to=${toCode}`);
+    if(!res.ok) throw new Error('rate lookup failed');
+    const data = await res.json();
+    const rate = data.rates && data.rates[toCode];
+    if(!rate) throw new Error('no rate in response');
+    await dbPut('meta', {key:cacheKey, value:rate});
+    return rate;
+  }catch(err){
+    const cached = await dbGet('meta', cacheKey);
+    if(cached) return cached.value;
+    throw err;
+  }
 }
 async function loadTheme(){
   const m = await dbGet('meta','theme');
@@ -872,6 +1320,8 @@ const topbarStamp = document.getElementById('topbar-stamp');
 const TAB_META = {
   dashboard: {title:'Dashboard', stamp:'฼'},
   ledger: {title:'Ledger', stamp:'≡'},
+  goals: {title:'Goals', stamp:'◎'},
+  board: {title:'Board', stamp:'🖼'},
   analytics: {title:'Analytics', stamp:'∿'},
   settings: {title:'Setup', stamp:'⚙'},
 };
@@ -884,6 +1334,8 @@ async function renderView(){
   let html = '';
   if(state.tab === 'dashboard') html = await renderDashboard();
   else if(state.tab === 'ledger') html = await renderLedger();
+  else if(state.tab === 'goals') html = await renderGoals();
+  else if(state.tab === 'board') html = await renderBoard();
   else if(state.tab === 'analytics') html = await renderAnalytics();
   else if(state.tab === 'settings') html = await renderSettings();
   viewRoot.innerHTML = `<div class="view-enter">${html}</div>`;
@@ -895,23 +1347,60 @@ async function renderDashboard(){
   const key = monthKeyOf(ymd(new Date()));
   const { income, expense, net, txns } = await monthTotals(key);
   const recent = (await getAllTransactions()).slice(0,5);
+  const allTxns = await getAllTransactions();
 
   const budgeted = state.categories.filter(c => c.type==='expense' && c.budget);
   const budgetRows = budgeted.map(c => {
-    const spent = txns.filter(t => t.type==='expense' && t.category===c.name).reduce((s,t)=>s+t.amount,0);
-    return { name:c.name, color:c.color, spent, budget:c.budget, pct: Math.min(100, c.budget? (spent/c.budget*100):0) };
+    const spent = txns.filter(t => t.type==='expense' && t.category===c.name).reduce((s,t)=>s+txnValue(t),0);
+    const effBudget = effectiveBudgetForMonth(c, key, allTxns);
+    return { name:c.name, color:c.color, spent, budget:effBudget, rollover:c.rollover, pct: Math.min(100, effBudget? (spent/effBudget*100):0) };
   }).sort((a,b)=> (b.spent/b.budget) - (a.spent/a.budget)).slice(0,3);
 
   const trendKeys = lastNMonthKeys(6, key);
   const trendVals = [];
   for(const k of trendKeys){ const t = await monthTotals(k); trendVals.push(t.net); }
 
+  const netWorth = state.accounts.reduce((s,a)=> s + computeAccountBalance(a.id, allTxns), 0);
+  const netWorthHistory = await getNetWorthHistory(30);
+
   return `
+    ${state.pendingRecurring.length ? `
+    <div class="section-label">Due now</div>
+    <div class="card" style="margin-bottom:18px;">
+      ${state.pendingRecurring.map(r => `
+        <div class="bar-item">
+          <div class="bar-top">
+            <span class="name"><span class="dot" style="background:${catColor(r.category)}"></span>${escapeHtml(r.name || r.category)}: ${fmtCompact(r.amount)}</span>
+          </div>
+          <div style="display:flex; gap:8px; margin-top:6px;">
+            <button class="txt-btn accent" data-confirmrec="${r.id}">Confirm</button>
+            <button class="txt-btn" data-skiprec="${r.id}">Skip</button>
+          </div>
+        </div>
+      `).join('')}
+    </div>` : ''}
+
     <div class="summary-row">
       <div class="summary-card income"><span class="lbl">In</span><span class="val">${fmtCompact(income)}</span></div>
       <div class="summary-card expense"><span class="lbl">Out</span><span class="val">${fmtCompact(expense)}</span></div>
       <div class="summary-card"><span class="lbl">Net</span><span class="val" style="color:${net>=0?'var(--green)':'var(--red)'}">${fmtCompact(net)}</span></div>
     </div>
+
+    ${state.accounts.length ? `
+    <div class="section-label">Your accounts <span style="color:var(--ink-dim); text-transform:none; letter-spacing:0;">· net worth ${fmtCompact(netWorth)}</span></div>
+    <div class="card" style="margin-bottom:18px;">
+      ${state.accounts.map(a => `
+        <div class="list-item account-row" data-gotoaccount="${a.id}" style="cursor:pointer;">
+          <span class="cat-row-left"><span class="dot" style="background:${a.color}"></span><span class="name">${escapeHtml(a.name)}</span></span>
+          <span class="txn-amt" style="color:${computeAccountBalance(a.id, allTxns)>=0?'var(--ink)':'var(--red)'}">${fmtCompact(computeAccountBalance(a.id, allTxns))}</span>
+        </div>
+      `).join('')}
+      ${netWorthHistory.length >= 2 ? `
+      <div style="margin-top:14px; padding-top:14px; border-top:1px dashed var(--line);">
+        <div class="goal-sub" style="margin-bottom:8px;">Net worth over time</div>
+        ${sparkline(netWorthHistory.map(s=>s.netWorth))}
+      </div>` : `<div class="goal-sub" style="margin-top:10px;">Check back after a few more days for a net worth trend.</div>`}
+    </div>` : ''}
 
     <div class="section-label">6-month trend</div>
     <div class="card" style="margin-bottom:18px;">
@@ -957,7 +1446,7 @@ function budgetBarHtml(b){
   const color = over ? 'var(--red)' : (b.pct > 70 ? 'var(--amber)' : 'var(--green)');
   return `<div class="bar-item">
     <div class="bar-top">
-      <span class="name"><span class="dot" style="background:${b.color}"></span>${escapeHtml(b.name)}</span>
+      <span class="name"><span class="dot" style="background:${b.color}"></span>${escapeHtml(b.name)}${b.rollover?' <span style="color:var(--ink-faint); font-size:10px;">(rolls over)</span>':''}</span>
       <span class="stat" style="color:${color}">${fmtCompact(b.spent)} / ${fmtCompact(b.budget)}</span>
     </div>
     <div class="bar-track"><div class="bar-fill" style="width:${b.pct}%; background:${color};"></div></div>
@@ -965,22 +1454,37 @@ function budgetBarHtml(b){
 }
 
 function txnRowHtml(t){
+  if(t.type === 'transfer'){
+    const fromName = accountById(t.fromAccountId) ? accountById(t.fromAccountId).name : 'Unknown';
+    const toName = accountById(t.toAccountId) ? accountById(t.toAccountId).name : 'Unknown';
+    return `<li class="txn-row" data-edit="${t.id}">
+      <span class="badge" style="color:var(--ink-dim); background:var(--surface-3);">TRANSFER</span>
+      <div class="txn-main">
+        <div class="txn-note">${escapeHtml(fromName)} to ${escapeHtml(toName)}</div>
+      </div>
+      <div class="txn-amt">${fmtCompact(t.amount)}</div>
+    </li>`;
+  }
   const color = catColor(t.category);
   const sign = t.type==='income' ? '+' : '−';
+  const origCurrency = t.currency && t.currency !== state.currency.code;
+  const origLabel = origCurrency ? `${CURRENCIES[t.currency] ? CURRENCIES[t.currency].symbol : ''}${t.amount.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})} ${t.currency} · ` : '';
+  const splitLabel = t.splitEnabled ? ` · split w/ ${escapeHtml(t.splitWith||'someone')}` : '';
   return `<li class="txn-row" data-edit="${t.id}">
     <span class="badge" style="color:${color}; background:${color}22;">${escapeHtml(t.category)}</span>
     <div class="txn-main">
-      <div class="txn-note ${t.note?'':'muted'}">${t.note ? escapeHtml(t.note) : 'No note'}</div>
+      <div class="txn-note ${t.note?'':'muted'}">${origLabel}${t.note ? escapeHtml(t.note) : (origCurrency ? '' : 'No note')}${splitLabel}</div>
     </div>
-    <div class="txn-amt ${t.type==='income'?'pos':'neg'}">${sign}${fmtCompact(t.amount)}</div>
+    <div class="txn-amt ${t.type==='income'?'pos':'neg'}">${sign}${fmtCompact(txnValue(t))}</div>
   </li>`;
 }
 
-function emptyState(glyph, msg, actionLabel){
+function emptyState(glyph, msg, actionLabel, kind){
+  const attr = kind === 'goal' ? 'data-open-add-goal="1"' : kind === 'board' ? 'data-open-add-board="1"' : 'data-open-add="1"';
   return `<div class="empty-state">
     <div class="glyph">${glyph}</div>
     <div class="msg">${msg}</div>
-    ${actionLabel ? `<button class="act" data-open-add="1">${actionLabel}</button>` : ''}
+    ${actionLabel ? `<button class="act" ${attr}>${actionLabel}</button>` : ''}
   </div>`;
 }
 
@@ -990,9 +1494,13 @@ async function renderLedger(){
   let filtered = txns;
   if(state.ledgerFilter !== 'all') filtered = filtered.filter(t => t.type === state.ledgerFilter);
   if(state.ledgerCategory !== 'all') filtered = filtered.filter(t => t.category === state.ledgerCategory);
+  if(state.ledgerAccount !== 'all'){
+    const accId = parseInt(state.ledgerAccount,10);
+    filtered = filtered.filter(t => t.accountId === accId || t.fromAccountId === accId || t.toAccountId === accId);
+  }
   if(state.ledgerSearch.trim()){
     const q = state.ledgerSearch.trim().toLowerCase();
-    filtered = filtered.filter(t => (t.note||'').toLowerCase().includes(q) || t.category.toLowerCase().includes(q));
+    filtered = filtered.filter(t => (t.note||'').toLowerCase().includes(q) || (t.category||'').toLowerCase().includes(q));
   }
 
   const groups = {};
@@ -1014,12 +1522,18 @@ async function renderLedger(){
     </div>
 
     <div class="chip-row" id="ledger-type-chips">
-      ${['all','income','expense'].map(f=>`<button class="chip ${state.ledgerFilter===f?'active':''}" data-filter="${f}">${f.toUpperCase()}</button>`).join('')}
+      ${['all','income','expense','transfer'].map(f=>`<button class="chip ${state.ledgerFilter===f?'active':''}" data-filter="${f}">${f.toUpperCase()}</button>`).join('')}
     </div>
 
-    <select class="field" id="ledger-cat-select" style="margin-bottom:16px;">
+    <select class="field" id="ledger-cat-select" style="margin-bottom:12px;">
       ${catOptions.map(c=>`<option value="${escapeHtml(c)}" ${state.ledgerCategory===c?'selected':''}>${c==='all'?'All categories':escapeHtml(c)}</option>`).join('')}
     </select>
+
+    ${state.accounts.length > 1 ? `
+    <select class="field" id="ledger-account-select" style="margin-bottom:16px;">
+      <option value="all" ${state.ledgerAccount==='all'?'selected':''}>All accounts</option>
+      ${state.accounts.map(a=>`<option value="${a.id}" ${String(state.ledgerAccount)===String(a.id)?'selected':''}>${escapeHtml(a.name)}</option>`).join('')}
+    </select>` : ''}
 
     ${dateKeys.length ? dateKeys.map(d => `
       <div class="receipt-day">${dayLabel(d)}</div>
@@ -1028,13 +1542,625 @@ async function renderLedger(){
   `;
 }
 
+/* ---------- GOALS ---------- */
+async function renderGoals(){
+  const goals = await dbGetAll('goals');
+  if(!goals.length){
+    return emptyState('◎', "Set a target for what you're building toward: an emergency fund, steady investing, paying down a debt, or just working out where your money should go each month.", 'Set your first goal', 'goal');
+  }
+  const allTxns = await getAllTransactions();
+  const key = monthKeyOf(ymd(new Date()));
+  const monthTxns = allTxns.filter(t => monthKeyOf(t.date) === key);
+  const monthIncome = monthTxns.filter(t => t.type === 'income').reduce((s,t)=>s+txnValue(t), 0);
+
+  const monthlyGoals = goals.filter(g => g.type === 'monthly');
+  const targetGoals = goals.filter(g => g.type === 'target');
+  const splitGoals = goals.filter(g => g.type === 'split');
+  const debtGoals = goals.filter(g => g.type === 'debt');
+
+  let html = '';
+  if(monthlyGoals.length){
+    html += `<div class="section-label">Monthly targets</div>`;
+    html += monthlyGoals.map(g => goalMonthlyCardHtml(g, computeMonthlyGoalProgress(g, monthTxns))).join('');
+  }
+  if(targetGoals.length){
+    html += `<div class="section-label" style="margin-top:${monthlyGoals.length?'18px':'0'};">Longer-term goals</div>`;
+    html += targetGoals.map(g => goalTargetCardHtml(g, computeTargetGoalProgress(g, allTxns))).join('');
+  }
+  if(splitGoals.length){
+    html += `<div class="section-label" style="margin-top:${(monthlyGoals.length||targetGoals.length)?'18px':'0'};">Income split</div>`;
+    html += splitGoals.map(g => goalSplitCardHtml(g, computeSplitGoalProgress(g, monthTxns, monthIncome))).join('');
+  }
+  if(debtGoals.length){
+    html += `<div class="section-label" style="margin-top:${(monthlyGoals.length||targetGoals.length||splitGoals.length)?'18px':'0'};">Debt payoff</div>`;
+    html += debtGoals.map(g => goalDebtCardHtml(g, computeDebtProgress(g, allTxns))).join('');
+  }
+  html += `<button class="btn" data-open-add-goal="1" style="margin-top:18px;">+ Add another goal</button>`;
+  return html;
+}
+
+function computeMonthlyGoalProgress(g, monthTxns){
+  const manual = monthTxns.filter(t => (g.linkedCategories||[]).includes(t.category)).reduce((s,t)=>s+txnValue(t), 0);
+  let auto = 0;
+  if(g.autoTrack){
+    const income = monthTxns.filter(t=>t.type==='income').reduce((s,t)=>s+txnValue(t),0);
+    const expense = monthTxns.filter(t=>t.type==='expense').reduce((s,t)=>s+txnValue(t),0);
+    auto = Math.max(0, income-expense) * (g.autoSharePct||0)/100;
+  }
+  const current = manual + auto;
+  const pct = g.targetAmount ? (current/g.targetAmount*100) : 0;
+  return { current, target: g.targetAmount||0, pct };
+}
+
+function computeTargetGoalProgress(g, allTxns){
+  const start = g.startDate || ymd(new Date());
+  const manual = allTxns.filter(t => t.date >= start && (g.linkedCategories||[]).includes(t.category)).reduce((s,t)=>s+txnValue(t), 0);
+  let auto = 0;
+  if(g.autoTrack){
+    let k = monthKeyOf(start);
+    const nowKey = monthKeyOf(ymd(new Date()));
+    let guard = 0;
+    while(guard < 600){
+      const mTxns = allTxns.filter(t => monthKeyOf(t.date) === k);
+      const income = mTxns.filter(t=>t.type==='income').reduce((s,t)=>s+txnValue(t),0);
+      const expense = mTxns.filter(t=>t.type==='expense').reduce((s,t)=>s+txnValue(t),0);
+      auto += Math.max(0, income-expense) * (g.autoSharePct||0)/100;
+      if(k === nowKey) break;
+      k = addMonths(k,1);
+      guard++;
+    }
+  }
+  const current = manual + auto;
+  const pct = g.targetAmount ? (current/g.targetAmount*100) : 0;
+  let pace = null;
+  if(g.targetDate){
+    const today = new Date();
+    const target = new Date(g.targetDate+'T00:00:00');
+    const msPerMonth = 1000*60*60*24*30.44;
+    const monthsLeft = Math.max(0, (target-today)/msPerMonth);
+    const remaining = Math.max(0, g.targetAmount-current);
+    const requiredMonthly = monthsLeft > 0.1 ? remaining/monthsLeft : remaining;
+    pace = { monthsLeft: Math.ceil(monthsLeft), requiredMonthly, remaining, overdue: target < today && current < g.targetAmount };
+  }
+  return { current, target: g.targetAmount||0, pct, pace };
+}
+
+function computeSplitGoalProgress(g, monthTxns, income){
+  const expenseByCat = {};
+  monthTxns.filter(t=>t.type==='expense').forEach(t => { expenseByCat[t.category] = (expenseByCat[t.category]||0) + t.amount; });
+  const assignments = g.categoryAssignments || {};
+  const buckets = (g.buckets||[]).map((b,i) => {
+    const cats = Object.entries(assignments).filter(([c,idx]) => idx === i).map(([c]) => c);
+    const actualFromCats = cats.reduce((s,c) => s + (expenseByCat[c]||0), 0);
+    return { ...b, cats, actualFromCats };
+  });
+  const assignedTotal = buckets.reduce((s,b) => s + b.actualFromCats, 0);
+  const leftover = Math.max(0, income - assignedTotal);
+  const noCatBuckets = buckets.filter(b => b.cats.length === 0);
+  const finalBuckets = buckets.map(b => {
+    const actual = b.cats.length > 0 ? b.actualFromCats : (noCatBuckets.length ? leftover/noCatBuckets.length : 0);
+    const targetAmt = income * (b.pct||0) / 100;
+    return { ...b, actual, targetAmt };
+  });
+  return { income, buckets: finalBuckets };
+}
+
+function goalMonthlyCardHtml(g, p){
+  const color = p.pct >= 100 ? 'var(--green)' : (p.pct >= 50 ? 'var(--amber)' : 'var(--ink-faint)');
+  const width = Math.min(100, Math.max(0,p.pct));
+  return `<div class="card goal-card" data-editgoal="${g.id}">
+    <div class="bar-top">
+      <span class="name">🎯 ${escapeHtml(g.name)}</span>
+      <span class="stat" style="color:${color}">${fmtCompact(p.current)} / ${fmtCompact(p.target)}</span>
+    </div>
+    <div class="bar-track"><div class="bar-fill" style="width:${width}%; background:${color};"></div></div>
+    <div class="goal-sub">${p.pct>=100 ? 'Target hit this month' : `${fmtCompact(Math.max(0,p.target-p.current))} to go this month`}</div>
+  </div>`;
+}
+
+function goalTargetCardHtml(g, p){
+  const color = p.pct >= 100 ? 'var(--green)' : (p.pct >= 50 ? 'var(--amber)' : 'var(--ink-faint)');
+  const width = Math.min(100, Math.max(0,p.pct));
+  let sub = `${fmtCompact(Math.max(0,p.target-p.current))} remaining`;
+  if(p.pace){
+    sub += p.pace.overdue ? ' · past target date' : ` · ${p.pace.monthsLeft} mo left · need ${fmtCompact(p.pace.requiredMonthly)}/mo`;
+  }
+  return `<div class="card goal-card" data-editgoal="${g.id}">
+    <div class="bar-top">
+      <span class="name">🏁 ${escapeHtml(g.name)}</span>
+      <span class="stat" style="color:${color}">${fmtCompact(p.current)} / ${fmtCompact(p.target)}</span>
+    </div>
+    <div class="bar-track"><div class="bar-fill" style="width:${width}%; background:${color};"></div></div>
+    <div class="goal-sub">${sub}</div>
+  </div>`;
+}
+
+function goalSplitCardHtml(g, result){
+  const dotPalette = ['#4E7DA6','#A6577E','#3E8C8C','#C98A3B','#8A5FA6'];
+  return `<div class="card goal-card" data-editgoal="${g.id}">
+    <div class="bar-top" style="margin-bottom:10px;"><span class="name">◐ ${escapeHtml(g.name)}</span></div>
+    ${result.buckets.map((b,i) => {
+      const isFloor = b.cats.length === 0;
+      const actualPct = result.income ? (b.actual/result.income*100) : 0;
+      const width = Math.min(100, actualPct);
+      const marker = Math.min(100, b.pct||0);
+      let color;
+      if(isFloor){ color = actualPct >= b.pct ? 'var(--green)' : (actualPct >= b.pct*0.7 ? 'var(--amber)' : 'var(--ink-faint)'); }
+      else { color = actualPct <= b.pct ? 'var(--green)' : (actualPct <= b.pct*1.2 ? 'var(--amber)' : 'var(--red)'); }
+      return `<div class="bar-item">
+        <div class="bar-top">
+          <span class="name"><span class="dot" style="background:${dotPalette[i%dotPalette.length]}"></span>${escapeHtml(b.name)} <span style="color:var(--ink-faint)">(${b.pct||0}%)</span></span>
+          <span class="stat" style="color:${color}">${fmtCompact(b.actual)} / ${fmtCompact(b.targetAmt)}</span>
+        </div>
+        <div class="bar-track"><div class="bar-fill" style="width:${width}%; background:${color};"></div><div class="bar-marker" style="left:${marker}%;"></div></div>
+      </div>`;
+    }).join('')}
+    <div class="goal-sub">Based on this month's income so far: ${fmtCompact(result.income)}</div>
+  </div>`;
+}
+
+function computeDebtProgress(g, allTxns){
+  const start = g.startDate || ymd(new Date());
+  const paid = allTxns.filter(t => t.date >= start && t.type==='expense' && (g.linkedCategories||[]).includes(t.category)).reduce((s,t)=>s+txnValue(t), 0);
+  const remaining = Math.max(0, (g.principal||0) - paid);
+  const pct = g.principal ? (paid/g.principal*100) : 0;
+  return { paid, remaining, pct, principal: g.principal||0 };
+}
+function goalDebtCardHtml(g, p){
+  const color = p.pct >= 100 ? 'var(--green)' : (p.pct >= 50 ? 'var(--amber)' : 'var(--red)');
+  const width = Math.min(100, Math.max(0,p.pct));
+  return `<div class="card goal-card" data-editgoal="${g.id}">
+    <div class="bar-top">
+      <span class="name">💳 ${escapeHtml(g.name)}</span>
+      <span class="stat" style="color:${color}">${fmtCompact(p.remaining)} left of ${fmtCompact(p.principal)}</span>
+    </div>
+    <div class="bar-track"><div class="bar-fill" style="width:${width}%; background:${color};"></div></div>
+    <div class="goal-sub">${p.pct>=100 ? 'Paid off' : `${p.pct.toFixed(0)}% paid off`}</div>
+  </div>`;
+}
+
+/* ---------- BOARD (vision board) ---------- */
+let boardItemsCache = [];
+let boardGoalsCache = [];
+let boardDragState = null;
+
+function boardGoalName(goalId){
+  const g = boardGoalsCache.find(x => x.id === goalId);
+  return g ? g.name : null;
+}
+
+async function renderBoard(){
+  const items = await dbGetAll('boardItems');
+  items.sort((a,b) => (a.zIndex||0) - (b.zIndex||0));
+  boardItemsCache = items;
+  boardGoalsCache = await dbGetAll('goals');
+
+  return `
+    ${items.length ? `<div class="board-hint">Drag to move · corner dot to resize · top dot to rotate</div>` : ''}
+    <div class="board-canvas" id="board-canvas">
+      ${items.map(it => boardItemHtml(it)).join('')}
+    </div>
+    ${!items.length ? emptyState('🖼', "Fill this board with people, places, or reminders that keep you moving toward your goals.", 'Add your first photo', 'board') : ''}
+    <div class="board-toolbar" id="board-toolbar" style="display:${state.boardSelectedId?'flex':'none'};">
+      <button class="board-tool-btn" data-boardtool="front" title="Bring to front">⬆</button>
+      <button class="board-tool-btn" data-boardtool="frame" title="Change frame">🖼</button>
+      <button class="board-tool-btn" data-boardtool="caption" title="Caption / text">✏️</button>
+      <button class="board-tool-btn" data-boardtool="goal" title="Link a goal">🎯</button>
+      <button class="board-tool-btn danger" data-boardtool="delete" title="Delete">🗑</button>
+      <button class="board-tool-btn" data-boardtool="deselect" title="Done">✕</button>
+    </div>
+  `;
+}
+
+function boardItemHtml(it){
+  const style = `left:${it.x}%; top:${it.y}%; width:${it.width}%; height:${it.height}%; transform:rotate(${it.rotation||0}deg); z-index:${it.zIndex||1};`;
+  const selected = String(state.boardSelectedId) === String(it.id) ? 'selected' : '';
+  const goalName = it.goalId ? boardGoalName(it.goalId) : null;
+  const goalBadge = goalName ? `<div class="board-goal-badge">🎯 ${escapeHtml(goalName)}</div>` : '';
+  const handles = `<div class="resize-handle"></div><div class="rotate-handle"></div>`;
+
+  if(it.type === 'photo'){
+    const frameClass = it.frame==='polaroid' ? 'frame-polaroid' : it.frame==='washi' ? 'frame-washi' : '';
+    return `<div class="board-item ${frameClass} ${selected}" data-boarditem="${it.id}" style="${style}">
+      ${goalBadge}
+      ${it.frame==='washi' ? `<div class="washi-tape"></div>` : ''}
+      <img src="${it.imageData}" class="board-photo-img" draggable="false" alt="">
+      ${it.frame==='polaroid' && it.caption ? `<div class="polaroid-caption">${escapeHtml(it.caption)}</div>` : ''}
+      ${it.frame!=='polaroid' && it.caption ? `<div class="board-caption-tag">${escapeHtml(it.caption)}</div>` : ''}
+      ${handles}
+    </div>`;
+  }
+  if(it.type === 'sticker'){
+    return `<div class="board-item board-sticker ${selected}" data-boarditem="${it.id}" style="${style}">
+      ${goalBadge}
+      <div class="sticker-emoji">${it.emoji}</div>
+      ${handles}
+    </div>`;
+  }
+  return `<div class="board-item board-text-item ${selected}" data-boarditem="${it.id}" style="${style}">
+    ${goalBadge}
+    <div class="board-text-content">${escapeHtml(it.text||'')}</div>
+    ${handles}
+  </div>`;
+}
+
+function resizeImageFile(file, maxDim){
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error('read failed'));
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onerror = () => reject(new Error('decode failed'));
+      img.onload = () => {
+        let { width, height } = img;
+        if(width > height && width > maxDim){ height = height*maxDim/width; width = maxDim; }
+        else if(height >= width && height > maxDim){ width = width*maxDim/height; height = maxDim; }
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.round(width); canvas.height = Math.round(height);
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL('image/jpeg', 0.82));
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+function nextBoardZ(){ return Math.max(0, ...boardItemsCache.map(x=>x.zIndex||0)) + 1; }
+
+async function addBoardPhoto(file){
+  try{
+    const dataUrl = await resizeImageFile(file, 900);
+    const item = {
+      type:'photo', imageData:dataUrl, caption:'', frame:'polaroid',
+      x: 28 + Math.random()*14, y: 28 + Math.random()*14, width:36, height:36,
+      rotation: Math.round(Math.random()*10-5), zIndex: nextBoardZ(), goalId:null,
+    };
+    await dbAdd('boardItems', item);
+    closeModal();
+    renderView();
+  }catch(err){ toast('Could not add that photo'); }
+}
+async function addBoardSticker(emoji){
+  const item = {
+    type:'sticker', emoji, x: 40 + Math.random()*10, y: 40 + Math.random()*10,
+    width:16, height:16, rotation: Math.round(Math.random()*16-8), zIndex: nextBoardZ(), goalId:null,
+  };
+  await dbAdd('boardItems', item);
+  closeModal();
+  renderView();
+}
+async function addBoardText(text){
+  const item = {
+    type:'text', text, x: 25 + Math.random()*10, y: 40 + Math.random()*10,
+    width:44, height:16, rotation: Math.round(Math.random()*6-3), zIndex: nextBoardZ(), goalId:null,
+  };
+  await dbAdd('boardItems', item);
+  closeModal();
+  renderView();
+}
+
+function openAddBoardItemSheet(){
+  const html = `
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">Add to your board</div>
+    <input type="file" accept="image/*" id="board-photo-file" style="display:none;">
+    <button class="btn primary" id="board-add-photo">📷 Add a photo</button>
+    <div class="field-group" style="margin-top:18px;">
+      <label class="field-label">Add a sticker</label>
+      <div class="cat-chip-grid" id="board-emoji-grid">
+        ${['⭐','💪','🎯','💰','🏆','❤️','🔥','✨','🌱','🏠','✈️','🎉'].map(e=>`<button type="button" class="cat-chip board-emoji-btn" data-emoji="${e}">${e}</button>`).join('')}
+      </div>
+    </div>
+    <div class="field-group">
+      <label class="field-label">Or add a note / quote</label>
+      <input id="board-note-text" type="text" class="field" placeholder="e.g. Financial freedom by 30">
+      <button class="btn" id="board-add-note" style="margin-top:10px;">Add note</button>
+    </div>
+    <button class="btn" id="board-add-cancel">Cancel</button>
+  `;
+  const ov = openOverlay(html);
+  const fileInput = ov.querySelector('#board-photo-file');
+  fileInput.addEventListener('change', () => {
+    if(fileInput.files[0]) addBoardPhoto(fileInput.files[0]);
+  });
+  ov.addEventListener('click', (e) => {
+    if(e.target.id === 'board-add-cancel'){ closeModal(); return; }
+    if(e.target.id === 'board-add-photo'){ fileInput.click(); return; }
+    const emojiBtn = e.target.closest('[data-emoji]');
+    if(emojiBtn){ addBoardSticker(emojiBtn.dataset.emoji); return; }
+    if(e.target.id === 'board-add-note'){
+      const text = ov.querySelector('#board-note-text').value.trim();
+      if(!text){ toast('Type something first'); return; }
+      addBoardText(text);
+      return;
+    }
+  });
+}
+
+function openBoardTextModal(item){
+  const isPhoto = item.type === 'photo';
+  const html = `
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">${isPhoto ? 'Caption' : 'Edit note'}</div>
+    <div class="field-group">
+      <input id="board-text-input" type="text" class="field" value="${escapeHtml(isPhoto ? (item.caption||'') : (item.text||''))}" placeholder="${isPhoto?'A short caption (optional)':'Your note or quote'}">
+    </div>
+    <button class="btn primary" id="board-text-save">Save</button>
+    <button class="btn" id="board-text-cancel">Cancel</button>
+  `;
+  const ov = openOverlay(html);
+  ov.addEventListener('click', async (e) => {
+    if(e.target.id === 'board-text-cancel'){ closeModal(); return; }
+    if(e.target.id === 'board-text-save'){
+      const val = ov.querySelector('#board-text-input').value.trim();
+      if(isPhoto) item.caption = val; else item.text = val;
+      await dbPut('boardItems', item);
+      closeModal(); renderView();
+    }
+  });
+}
+
+async function openBoardGoalLinkModal(item){
+  const goals = await dbGetAll('goals');
+  const html = `
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">Link to a goal</div>
+    ${goals.length ? `
+    <div class="chip-row" style="flex-wrap:wrap; overflow:visible;">
+      <button type="button" class="chip ${!item.goalId?'active':''}" data-linkgoal="none">NONE</button>
+      ${goals.map(g=>`<button type="button" class="chip ${item.goalId===g.id?'active':''}" data-linkgoal="${g.id}">${escapeHtml(g.name.toUpperCase())}</button>`).join('')}
+    </div>` : `<div style="color:var(--ink-faint); font-size:12.5px;">No goals set up yet. Add one from the Goals tab first.</div>`}
+    <button class="btn" id="board-goal-cancel" style="margin-top:16px;">Close</button>
+  `;
+  const ov = openOverlay(html);
+  ov.addEventListener('click', async (e) => {
+    if(e.target.id === 'board-goal-cancel'){ closeModal(); return; }
+    const btn = e.target.closest('[data-linkgoal]');
+    if(btn){
+      item.goalId = btn.dataset.linkgoal==='none' ? null : parseInt(btn.dataset.linkgoal,10);
+      await dbPut('boardItems', item);
+      closeModal(); toast('Updated'); renderView();
+    }
+  });
+}
+
+// Custom single-pointer drag / resize / rotate for board items. Positions are
+// stored as percentages of the canvas so the board scales across screen sizes.
+function attachBoardInteraction(){
+  const canvas = document.getElementById('board-canvas');
+  if(!canvas) return;
+
+  canvas.addEventListener('pointerdown', (e) => {
+    const itemEl = e.target.closest('.board-item');
+    if(!itemEl){
+      if(state.boardSelectedId !== null){ state.boardSelectedId = null; renderView(); }
+      return;
+    }
+    e.preventDefault();
+    const id = parseInt(itemEl.dataset.boarditem, 10);
+    const item = boardItemsCache.find(x => x.id === id);
+    if(!item) return;
+
+    if(state.boardSelectedId !== id){
+      state.boardSelectedId = id;
+      canvas.querySelectorAll('.board-item.selected').forEach(el=>el.classList.remove('selected'));
+      itemEl.classList.add('selected');
+      const bar = document.getElementById('board-toolbar');
+      if(bar) bar.style.display = 'flex';
+    }
+
+    const rect = canvas.getBoundingClientRect();
+    let mode = 'move';
+    if(e.target.classList.contains('resize-handle')) mode = 'resize';
+    else if(e.target.classList.contains('rotate-handle')) mode = 'rotate';
+
+    boardDragState = {
+      id, mode, itemEl, canvasRect: rect,
+      startClientX: e.clientX, startClientY: e.clientY,
+      startItem: { x:item.x, y:item.y, width:item.width, height:item.height, rotation:item.rotation||0 },
+    };
+    try{ itemEl.setPointerCapture(e.pointerId); }catch(err){}
+  });
+
+  canvas.addEventListener('pointermove', (e) => {
+    if(!boardDragState) return;
+    const { mode, itemEl, canvasRect, startClientX, startClientY, startItem } = boardDragState;
+    const dxPct = (e.clientX - startClientX) / canvasRect.width * 100;
+    const dyPct = (e.clientY - startClientY) / canvasRect.height * 100;
+
+    if(mode === 'move'){
+      const newX = Math.max(-15, Math.min(95, startItem.x + dxPct));
+      const newY = Math.max(-15, Math.min(95, startItem.y + dyPct));
+      itemEl.style.left = newX + '%'; itemEl.style.top = newY + '%';
+      boardDragState.liveX = newX; boardDragState.liveY = newY;
+    } else if(mode === 'resize'){
+      const newW = Math.max(8, Math.min(95, startItem.width + dxPct));
+      const newH = Math.max(8, Math.min(95, startItem.height + dyPct));
+      itemEl.style.width = newW + '%'; itemEl.style.height = newH + '%';
+      boardDragState.liveW = newW; boardDragState.liveH = newH;
+    } else if(mode === 'rotate'){
+      const centerX = canvasRect.left + (startItem.x/100)*canvasRect.width + (startItem.width/100)*canvasRect.width/2;
+      const centerY = canvasRect.top + (startItem.y/100)*canvasRect.height + (startItem.height/100)*canvasRect.height/2;
+      const angle = Math.atan2(e.clientY - centerY, e.clientX - centerX) * 180/Math.PI + 90;
+      itemEl.style.transform = `rotate(${angle}deg)`;
+      boardDragState.liveRotation = angle;
+    }
+  });
+
+  async function finishDrag(){
+    if(!boardDragState) return;
+    const { id, mode } = boardDragState;
+    const item = boardItemsCache.find(x => x.id === id);
+    if(item){
+      if(mode==='move' && boardDragState.liveX!=null){ item.x = boardDragState.liveX; item.y = boardDragState.liveY; }
+      if(mode==='resize' && boardDragState.liveW!=null){ item.width = boardDragState.liveW; item.height = boardDragState.liveH; }
+      if(mode==='rotate' && boardDragState.liveRotation!=null){ item.rotation = boardDragState.liveRotation; }
+      await dbPut('boardItems', item);
+    }
+    boardDragState = null;
+  }
+  canvas.addEventListener('pointerup', finishDrag);
+  canvas.addEventListener('pointercancel', () => { boardDragState = null; });
+}
+
+/* ---------- analytics helpers ---------- */
+async function monthTotalsForAnalytics(key, accountFilter){
+  let txns = await getTransactionsForMonth(key);
+  if(accountFilter && accountFilter !== 'all'){
+    const id = parseInt(accountFilter,10);
+    txns = txns.filter(t => t.accountId === id);
+  }
+  let income=0, expense=0;
+  for(const t of txns){
+    if(t.type==='income') income += txnValue(t);
+    else if(t.type==='expense') expense += txnValue(t);
+  }
+  return { income, expense, net: income-expense, txns };
+}
+function hashColor(str){
+  let h = 0;
+  for(let i=0;i<str.length;i++){ h = (h*31 + str.charCodeAt(i)) >>> 0; }
+  const palette = ['#4E7DA6','#A6577E','#3E8C8C','#C98A3B','#8A5FA6','#5A76B0','#6B9C7D','#C9A23B'];
+  return palette[h % palette.length];
+}
+function sliceColor(sliceBy, name){
+  if(sliceBy === 'category') return catColor(name);
+  if(sliceBy === 'account'){ const a = state.accounts.find(x=>x.name===name); return a ? a.color : '#8B93A0'; }
+  if(sliceBy === 'weekday') return 'var(--amber)';
+  return hashColor(name); // currency
+}
+function breakdownBy(txns, sliceBy){
+  const map = {};
+  let total = 0;
+  for(const t of txns){
+    if(t.type !== 'expense') continue;
+    let key;
+    if(sliceBy === 'account') key = accountById(t.accountId) ? accountById(t.accountId).name : 'Unassigned';
+    else if(sliceBy === 'currency') key = t.currency || state.currency.code;
+    else if(sliceBy === 'weekday') key = new Date(t.date+'T00:00:00').toLocaleDateString('en-US',{weekday:'short'});
+    else key = t.category;
+    const val = txnValue(t);
+    map[key] = (map[key]||0) + val;
+    total += val;
+  }
+  let rows = Object.entries(map).map(([name,value]) => ({name, value, pct: total ? (value/total*100) : 0}));
+  if(sliceBy === 'weekday'){
+    const order = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+    rows.sort((a,b) => order.indexOf(a.name) - order.indexOf(b.name));
+  } else {
+    rows.sort((a,b) => b.value - a.value);
+  }
+  return { rows, total };
+}
+function topTransactionsList(txns, n){
+  return txns.filter(t => t.type !== 'transfer').slice().sort((a,b) => txnValue(b) - txnValue(a)).slice(0, n);
+}
+async function generateInsights(ctx){
+  const insights = [];
+
+  // Category momentum: this month vs the average of prior months in range.
+  const monthCatTotals = {};
+  for(const m of ctx.months){
+    const { rows } = await categoryBreakdown(m.txns, 'expense');
+    monthCatTotals[m.key] = Object.fromEntries(rows.map(r => [r.name, r.value]));
+  }
+  const thisCats = monthCatTotals[ctx.thisMonthKey] || {};
+  const prevKeys = ctx.months.slice(0,-1).map(m => m.key);
+  let bestIncrease = null, bestDecrease = null;
+  if(prevKeys.length){
+    for(const [cat, val] of Object.entries(thisCats)){
+      const prevVals = prevKeys.map(k => (monthCatTotals[k]||{})[cat] || 0);
+      const avgPrev = prevVals.reduce((a,b)=>a+b,0) / prevVals.length;
+      if(avgPrev > 0){
+        const pctChange = (val - avgPrev) / avgPrev * 100;
+        if(pctChange >= 20 && (!bestIncrease || pctChange > bestIncrease.pct)) bestIncrease = {cat, pct:pctChange, val, avgPrev};
+        if(pctChange <= -20 && (!bestDecrease || pctChange < bestDecrease.pct)) bestDecrease = {cat, pct:pctChange, val, avgPrev};
+      }
+    }
+  }
+  if(bestIncrease) insights.push(`🔺 ${escapeHtml(bestIncrease.cat)} is up ${Math.round(bestIncrease.pct)}% vs your recent average: ${fmtCompact(bestIncrease.val)} this month vs ${fmtCompact(bestIncrease.avgPrev)} usually.`);
+  if(bestDecrease) insights.push(`🔻 ${escapeHtml(bestDecrease.cat)} is down ${Math.round(Math.abs(bestDecrease.pct))}% vs your recent average, nice work.`);
+
+  // Biggest single expense this month.
+  const expensesThisMonth = ctx.thisMonthTxns.filter(t => t.type === 'expense');
+  if(expensesThisMonth.length){
+    const biggest = expensesThisMonth.slice().sort((a,b) => txnValue(b)-txnValue(a))[0];
+    insights.push(`💸 Biggest expense this month: ${fmtCompact(txnValue(biggest))} on ${escapeHtml(biggest.category)}${biggest.note ? ', ' + escapeHtml(biggest.note) : ''}.`);
+  }
+
+  // Weekday pattern across the whole range.
+  const { rows: wdRows } = breakdownBy(ctx.rangeTxns, 'weekday');
+  if(wdRows.length){
+    const busiest = wdRows.slice().sort((a,b)=>b.value-a.value)[0];
+    if(busiest.value > 0) insights.push(`📅 You tend to spend the most on ${busiest.name}s.`);
+  }
+
+  // Savings rate trend vs the previous month.
+  if(ctx.months.length >= 2){
+    const thisM = ctx.months[ctx.months.length-1];
+    const prevM = ctx.months[ctx.months.length-2];
+    const thisRate = thisM.income ? (thisM.income-thisM.expense)/thisM.income*100 : null;
+    const prevRate = prevM.income ? (prevM.income-prevM.expense)/prevM.income*100 : null;
+    if(thisRate!=null && prevRate!=null){
+      const diff = thisRate - prevRate;
+      if(Math.abs(diff) >= 5) insights.push(`${diff>0?'📈':'📉'} Savings rate is ${diff>0?'up':'down'} ${Math.abs(diff).toFixed(0)} points vs last month.`);
+    }
+  }
+
+  // Goal pace callouts.
+  for(const g of ctx.goals){
+    if(g.type === 'monthly'){
+      const p = computeMonthlyGoalProgress(g, ctx.thisMonthTxns);
+      if(p.pct >= 100) insights.push(`🎯 "${escapeHtml(g.name)}" target hit for this month.`);
+      else if(new Date().getDate() >= 20 && p.pct < 50) insights.push(`⚠️ "${escapeHtml(g.name)}" is behind pace this month (${Math.round(p.pct)}%).`);
+    }
+  }
+
+  return insights.slice(0,4);
+}
+
+function calendarHeatmapHtml(monthKey, txns){
+  const [y,m] = monthKey.split('-').map(Number);
+  const days = daysInMonth(monthKey);
+  const dayTotals = {};
+  txns.filter(t => t.type==='expense' && monthKeyOf(t.date)===monthKey).forEach(t => {
+    dayTotals[t.date] = (dayTotals[t.date]||0) + txnValue(t);
+  });
+  const maxDay = Math.max(1, ...Object.values(dayTotals));
+  const firstDow = new Date(y, m-1, 1).getDay();
+  const leadBlank = (firstDow+6) % 7; // Monday-first index
+  let cells = '';
+  for(let i=0;i<leadBlank;i++) cells += `<div class="heat-cell empty"></div>`;
+  for(let d=1; d<=days; d++){
+    const dateStr = `${y}-${pad2(m)}-${pad2(d)}`;
+    const val = dayTotals[dateStr] || 0;
+    const intensity = val/maxDay;
+    let level = 0;
+    if(intensity > 0) level = 1;
+    if(intensity > 0.33) level = 2;
+    if(intensity > 0.66) level = 3;
+    cells += `<div class="heat-cell level-${level}" data-heatday="${monthKey}" title="${dateStr}: ${fmtCompact(val)}"></div>`;
+  }
+  return `<div class="heat-grid">${cells}</div>
+    <div class="heat-legend">
+      <span>Less</span>
+      <span class="sw" style="background:var(--surface-3);"></span>
+      <span class="sw" style="background:var(--amber-dim);"></span>
+      <span class="sw" style="background:var(--amber); opacity:0.75;"></span>
+      <span class="sw" style="background:var(--red);"></span>
+      <span>More</span>
+    </div>`;
+}
+
 /* ---------- ANALYTICS ---------- */
 async function renderAnalytics(){
   const key = monthKeyOf(ymd(new Date()));
   const range = state.analyticsRange;
   const keys = lastNMonthKeys(range, key);
   const months = [];
-  for(const k of keys){ months.push({key:k, ...(await monthTotals(k))}); }
+  for(const k of keys){ months.push({key:k, ...(await monthTotalsForAnalytics(k, state.analyticsAccount))}); }
 
   const maxVal = Math.max(1, ...months.map(m=>Math.max(m.income,m.expense)));
   const totalIncome = months.reduce((s,m)=>s+m.income,0);
@@ -1045,30 +2171,48 @@ async function renderAnalytics(){
   const avgDaily = totalDays ? totalExpense/totalDays : 0;
 
   const allTxnsInRange = months.flatMap(m => m.txns);
-  const { rows: catRows, total: catTotal } = await categoryBreakdown(allTxnsInRange, 'expense');
-  const maxCat = catRows.length ? catRows[0].value : 1;
-  const topCategory = catRows[0];
+  const thisMonth = months[months.length-1];
+  const slice = state.analyticsSlice;
+  const { rows: sliceRows } = breakdownBy(allTxnsInRange, slice);
+  const maxSlice = sliceRows.length ? sliceRows[0].value : 1;
+  const topCategoryRow = breakdownBy(allTxnsInRange, 'category').rows[0];
+
+  const goals = await dbGetAll('goals');
+  const insights = await generateInsights({ months, thisMonthTxns: thisMonth.txns, thisMonthKey: thisMonth.key, rangeTxns: allTxnsInRange, goals });
+  const biggest = topTransactionsList(allTxnsInRange, 5);
 
   const budgeted = state.categories.filter(c => c.type==='expense' && c.budget);
-  const thisMonth = months[months.length-1];
+  const allTxnsFull = await getAllTransactions();
   const budgetRows = budgeted.map(c => {
-    const spent = thisMonth.txns.filter(t => t.type==='expense' && t.category===c.name).reduce((s,t)=>s+t.amount,0);
-    return { name:c.name, color:c.color, spent, budget:c.budget, pct: Math.min(100, c.budget? (spent/c.budget*100):0) };
+    const spent = thisMonth.txns.filter(t => t.type==='expense' && t.category===c.name).reduce((s,t)=>s+txnValue(t),0);
+    const effBudget = effectiveBudgetForMonth(c, thisMonth.key, allTxnsFull);
+    return { name:c.name, color:c.color, spent, budget:effBudget, rollover:c.rollover, pct: Math.min(100, effBudget? (spent/effBudget*100):0) };
   }).sort((a,b)=> (b.spent/b.budget) - (a.spent/a.budget));
 
   return `
     <div class="chip-row">
       ${[3,6,12].map(r=>`<button class="chip ${state.analyticsRange===r?'active':''}" data-range="${r}">${r} MO</button>`).join('')}
     </div>
+    ${state.accounts.length > 1 ? `
+    <select class="field" id="analytics-account-select" style="margin-bottom:16px;">
+      <option value="all" ${state.analyticsAccount==='all'?'selected':''}>All accounts</option>
+      ${state.accounts.map(a=>`<option value="${a.id}" ${String(state.analyticsAccount)===String(a.id)?'selected':''}>${escapeHtml(a.name)}</option>`).join('')}
+    </select>` : ''}
+
+    ${insights.length ? `
+    <div class="section-label">Insights</div>
+    <div class="card" style="margin-bottom:18px;">
+      ${insights.map(text => `<div class="insight-row">${text}</div>`).join('')}
+    </div>` : ''}
 
     <div class="stat-grid">
       <div class="stat-tile"><span class="lbl">Total saved</span><span class="val" style="color:${netSaved>=0?'var(--green)':'var(--red)'}">${fmtCompact(netSaved)}</span></div>
       <div class="stat-tile"><span class="lbl">Savings rate</span><span class="val">${savingsRate.toFixed(0)}%</span></div>
       <div class="stat-tile"><span class="lbl">Avg. daily spend</span><span class="val">${fmtCompact(avgDaily)}</span></div>
-      <div class="stat-tile"><span class="lbl">Top category</span><span class="val" style="font-size:13.5px; color:${topCategory?catColor(topCategory.name):'var(--ink)'}">${topCategory ? escapeHtml(topCategory.name) : '—'}</span></div>
+      <div class="stat-tile"><span class="lbl">Top category</span><span class="val" style="font-size:13.5px; color:${topCategoryRow?catColor(topCategoryRow.name):'var(--ink)'}">${topCategoryRow ? escapeHtml(topCategoryRow.name) : 'None yet'}</span></div>
     </div>
 
-    <div class="section-label">Income vs. expense</div>
+    <div class="section-label">Income vs. expense <span style="color:var(--ink-dim); text-transform:none; letter-spacing:0;">· tap a month</span></div>
     <div class="card" style="margin-bottom:18px;">
       <div class="legend-row">
         <span class="legend-item"><span class="dot" style="background:var(--green)"></span>Income</span>
@@ -1076,7 +2220,7 @@ async function renderAnalytics(){
       </div>
       <div class="mbar-chart">
         ${months.map(m => `
-          <div class="mbar-group">
+          <div class="mbar-group" data-drillmonth="${m.key}" style="cursor:pointer;">
             <div class="mbar-pair">
               <div class="mbar income" style="height:${Math.max(2,m.income/maxVal*100)}%" title="Income ${fmtMoney(m.income)}"></div>
               <div class="mbar expense" style="height:${Math.max(2,m.expense/maxVal*100)}%" title="Expense ${fmtMoney(m.expense)}"></div>
@@ -1088,17 +2232,41 @@ async function renderAnalytics(){
     </div>
 
     <div class="section-label">Where it goes (${range}mo)</div>
+    <div class="chip-row">
+      ${[['category','CATEGORY'],['account','ACCOUNT'],['currency','CURRENCY'],['weekday','WEEKDAY']].map(([v,l])=>`<button class="chip ${slice===v?'active':''}" data-slice="${v}">${l}</button>`).join('')}
+    </div>
     <div class="card" style="margin-bottom:18px;">
-      ${catRows.length ? catRows.map(r => `
-        <div class="bar-item">
+      ${sliceRows.length ? sliceRows.map(r => {
+        const drillable = slice === 'category' || slice === 'account';
+        const attr = slice==='category' ? `data-drillcat="${escapeHtml(r.name)}"` : slice==='account' ? `data-drillaccount="${escapeHtml(r.name)}"` : '';
+        return `
+        <div class="bar-item" ${attr} style="${drillable?'cursor:pointer;':''}">
           <div class="bar-top">
-            <span class="name"><span class="dot" style="background:${catColor(r.name)}"></span>${escapeHtml(r.name)}</span>
+            <span class="name"><span class="dot" style="background:${sliceColor(slice, r.name)}"></span>${escapeHtml(r.name)}</span>
             <span class="stat">${fmtCompact(r.value)} · ${r.pct.toFixed(0)}%</span>
           </div>
-          <div class="bar-track"><div class="bar-fill" style="width:${(r.value/maxCat*100)}%; background:${catColor(r.name)};"></div></div>
+          <div class="bar-track"><div class="bar-fill" style="width:${(r.value/maxSlice*100)}%; background:${sliceColor(slice, r.name)};"></div></div>
         </div>
-      `).join('') : `<div style="color:var(--ink-faint); font-size:13px;">No expenses logged in this range.</div>`}
+      `;}).join('') : `<div style="color:var(--ink-faint); font-size:13px;">No expenses logged in this range.</div>`}
     </div>
+
+    ${biggest.length ? `
+    <div class="section-label">Biggest transactions (${range}mo) <span style="color:var(--ink-dim); text-transform:none; letter-spacing:0;">· tap to edit</span></div>
+    <ul class="receipt" style="margin-bottom:18px;">${biggest.map(t=>txnRowHtml(t)).join('')}</ul>` : ''}
+
+    <div class="section-label">Daily spending, ${monthLabel(thisMonth.key)}</div>
+    <div class="card" style="margin-bottom:18px;">
+      ${calendarHeatmapHtml(thisMonth.key, thisMonth.txns)}
+    </div>
+
+    ${goals.length ? `
+    <div class="section-label">Goals <span style="color:var(--ink-dim); text-transform:none; letter-spacing:0;">· tap to edit</span></div>
+    ${goals.filter(g=>g.type==='monthly').map(g => goalMonthlyCardHtml(g, computeMonthlyGoalProgress(g, thisMonth.txns))).join('')}
+    ${goals.filter(g=>g.type==='target').map(g => goalTargetCardHtml(g, computeTargetGoalProgress(g, allTxnsInRange))).join('')}
+    ${goals.filter(g=>g.type==='split').map(g => goalSplitCardHtml(g, computeSplitGoalProgress(g, thisMonth.txns, thisMonth.income))).join('')}
+    ${goals.filter(g=>g.type==='debt').map(g => goalDebtCardHtml(g, computeDebtProgress(g, allTxnsInRange))).join('')}
+    <button class="hairline-btn" data-goto="goals" style="margin:10px 0 18px;">View all goals →</button>
+    ` : ''}
 
     ${budgetRows.length ? `
     <div class="section-label">Budgets this month</div>
@@ -1110,9 +2278,12 @@ async function renderAnalytics(){
 
 /* ---------- SETTINGS ---------- */
 async function renderSettings(){
-  const currentCode = Object.keys(CURRENCIES).find(k => CURRENCIES[k].symbol === state.currency.symbol) || 'THB';
+  const currentCode = state.currency.code;
   const incomeCats = state.categories.filter(c=>c.type==='income');
   const expenseCats = state.categories.filter(c=>c.type==='expense');
+  const recurringRules = await dbGetAll('recurring');
+  const allTxns = await getAllTransactions();
+  const pinHash = await getPinHash();
 
   function catListHtml(list){
     return list.map(c => `
@@ -1121,7 +2292,7 @@ async function renderSettings(){
           <span class="dot" style="background:${c.color}"></span>
           <div class="info">
             <div class="name">${escapeHtml(c.name)}</div>
-            ${c.budget ? `<div class="sub">Budget ${fmtCompact(c.budget)}/mo</div>` : ''}
+            ${c.budget ? `<div class="sub">Budget ${fmtCompact(c.budget)}/mo${c.rollover?' · rolls over':''}</div>` : ''}
           </div>
         </div>
         <div class="row-actions">
@@ -1132,7 +2303,32 @@ async function renderSettings(){
     `).join('');
   }
 
+  function recurringListHtml(){
+    if(!recurringRules.length) return `<div style="color:var(--ink-faint); font-size:12.5px;">Nothing set up yet: rent, subscriptions, salary, anything that repeats.</div>`;
+    return recurringRules.map(r => `
+      <div class="list-item">
+        <div class="cat-row-left">
+          <span class="dot" style="background:${catColor(r.category)}"></span>
+          <div class="info">
+            <div class="name">${escapeHtml(r.name || r.category)} · ${fmtCompact(r.amount)}</div>
+            <div class="sub">${r.frequency} · ${r.autoPost ? 'auto-posts' : 'needs confirm'} · next ${r.nextDueDate}${r.active===false?' · paused':''}</div>
+          </div>
+        </div>
+        <div class="row-actions">
+          <button class="txt-btn accent" data-editrecurring="${r.id}">Edit</button>
+          <button class="txt-btn danger" data-delrecurring="${r.id}">Remove</button>
+        </div>
+      </div>
+    `).join('');
+  }
+
   return `
+    <div class="section-label">Privacy &amp; lock</div>
+    <div class="card" style="margin-bottom:18px;">
+      <button class="btn" id="pin-setup-btn">${pinHash ? 'Change PIN' : 'Set a PIN'}</button>
+      <div style="font-size:11.5px; color:var(--ink-faint); margin-top:8px;">${pinHash ? 'A PIN is required to open this app.' : 'Add a PIN so the app locks when closed.'}</div>
+    </div>
+
     <div class="section-label">Palette</div>
     <div class="card" style="margin-bottom:18px;">
       <div class="theme-grid">
@@ -1154,8 +2350,35 @@ async function renderSettings(){
     <div class="section-label">Currency</div>
     <div class="card" style="margin-bottom:18px;">
       <select class="field" id="currency-select">
-        ${Object.entries(CURRENCIES).map(([code,c])=>`<option value="${code}" ${code===currentCode?'selected':''}>${code} — ${c.symbol}</option>`).join('')}
+        ${Object.entries(CURRENCIES).map(([code,c])=>`<option value="${code}" ${code===currentCode?'selected':''}>${code} (${c.symbol})</option>`).join('')}
       </select>
+      <div style="font-size:11.5px; color:var(--ink-faint); margin-top:8px;">This is your base currency. Totals across the app are shown in it. Individual transactions can still be logged in a different currency.</div>
+    </div>
+
+    <div class="section-label">Accounts <span style="color:var(--ink-dim); text-transform:none; letter-spacing:0;">· net worth ${fmtCompact(state.accounts.reduce((s,a)=>s+computeAccountBalance(a.id, allTxns),0))}</span></div>
+    <div class="card" style="margin-bottom:18px;">
+      ${state.accounts.map(a => `
+        <div class="list-item">
+          <div class="cat-row-left">
+            <span class="dot" style="background:${a.color}"></span>
+            <div class="info">
+              <div class="name">${escapeHtml(a.name)}</div>
+              <div class="sub">Balance ${fmtCompact(computeAccountBalance(a.id, allTxns))}</div>
+            </div>
+          </div>
+          <div class="row-actions">
+            <button class="txt-btn accent" data-editaccount="${a.id}">Edit</button>
+            <button class="txt-btn danger" data-delaccount="${a.id}">Remove</button>
+          </div>
+        </div>
+      `).join('')}
+      <button class="btn" id="add-account" style="margin-top:12px;">+ Add account</button>
+    </div>
+
+    <div class="section-label">Recurring transactions</div>
+    <div class="card" style="margin-bottom:18px;">
+      ${recurringListHtml()}
+      <button class="btn" id="add-recurring" style="margin-top:12px;">+ Add recurring transaction</button>
     </div>
 
     <div class="section-label">Income categories</div>
@@ -1172,6 +2395,7 @@ async function renderSettings(){
 
     <div class="section-label">Your data</div>
     <div class="card" style="margin-bottom:18px;">
+      <button class="btn" id="export-csv">Export as CSV (for spreadsheets)</button>
       <button class="btn" id="export-data">Export backup (.json)</button>
       <button class="btn" id="import-data">Import backup</button>
       <input type="file" id="import-file" accept="application/json" style="display:none;">
@@ -1179,7 +2403,7 @@ async function renderSettings(){
     </div>
 
     <div class="privacy-note">
-      <b>Private by design.</b> Every transaction, category, and budget is stored in this browser's local database on this device. Nothing is uploaded, synced, or shared — not even with Anthropic or Claude. Uninstalling the app or clearing site data will delete it permanently, so export a backup now and then if you'd like a copy.
+      <b>Private by design.</b> Every transaction, category, account, and goal is stored in this browser's local database on this device. Nothing is uploaded, synced, or shared, not even with Anthropic or Claude. Uninstalling the app or clearing site data will delete it permanently, so export a backup now and then if you'd like a copy.
     </div>
   `;
 }
@@ -1202,16 +2426,90 @@ function openOverlay(innerHtml){
   return ov;
 }
 
-async function openTransactionModal(editId){
+function txnTypeFieldsHtml(type, editing){
+  if(type === 'transfer'){
+    const fromSel = (editing && editing.fromAccountId) || state.accounts[0].id;
+    const defaultTo = state.accounts.find(a => a.id !== fromSel);
+    const toSel = (editing && editing.toAccountId) || (defaultTo ? defaultTo.id : null);
+    return `
+      <div class="field-group">
+        <label class="field-label">Amount</label>
+        <div class="amount-field">
+          <span class="cur">${state.currency.symbol}</span>
+          <input id="txn-amount" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0.00" value="${editing? editing.amount : ''}">
+        </div>
+      </div>
+      <div class="field-group">
+        <label class="field-label">From account</label>
+        <select id="txn-from-account" class="field select-native">${state.accounts.map(a=>`<option value="${a.id}" ${fromSel===a.id?'selected':''}>${escapeHtml(a.name)}</option>`).join('')}</select>
+      </div>
+      <div class="field-group">
+        <label class="field-label">To account</label>
+        <select id="txn-to-account" class="field select-native">${state.accounts.map(a=>`<option value="${a.id}" ${toSel===a.id?'selected':''}>${escapeHtml(a.name)}</option>`).join('')}</select>
+      </div>
+    `;
+  }
+
+  const cats = state.categories.filter(c=>c.type===type);
+  const catChipsHtml = cats.map(c => `<button type="button" class="cat-chip ${editing && editing.category===c.name ? 'selected':''}" data-cat="${escapeHtml(c.name)}" style="${(editing && editing.category===c.name) ? `background:${c.color};border-color:${c.color};` : ''}">${escapeHtml(c.name)}</button>`).join('');
+  const curCode = (editing && editing.currency) ? editing.currency : state.currency.code;
+  const baseCode = state.currency.code;
+  return `
+    <div class="field-group">
+      <label class="field-label">Amount</label>
+      <div class="amount-field">
+        <select id="txn-currency" class="cur-select">${Object.keys(CURRENCIES).map(code=>`<option value="${code}" ${code===curCode?'selected':''}>${CURRENCIES[code].symbol} ${code}</option>`).join('')}</select>
+        <input id="txn-amount" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0.00" value="${editing? editing.amount : ''}">
+      </div>
+    </div>
+    <div class="field-group" id="txn-fx-group" style="${curCode===baseCode?'display:none;':''}">
+      <label class="field-label">Exchange rate → ${baseCode}</label>
+      <div style="display:flex; gap:8px; align-items:center;">
+        <input id="txn-fxrate" type="number" step="0.000001" min="0" class="field" style="flex:1;" placeholder="e.g. 0.26" value="${editing&&editing.fxRate&&editing.currency!==baseCode?editing.fxRate:''}">
+        <button type="button" class="btn" id="txn-fx-fetch" style="width:auto; padding:11px 14px; margin:0; white-space:nowrap;">Fetch rate</button>
+      </div>
+      <div class="scan-status" id="txn-fx-preview" style="display:block;"></div>
+    </div>
+    <div class="field-group">
+      <label class="field-label">Category</label>
+      <div class="cat-chip-grid" id="txn-cat-grid">${catChipsHtml}</div>
+    </div>
+    <div class="field-group">
+      <label class="field-label">Account</label>
+      <select id="txn-account" class="field select-native">${state.accounts.map(a=>`<option value="${a.id}" ${(editing&&editing.accountId===a.id)||(!editing&&a.id===state.accounts[0].id)?'selected':''}>${escapeHtml(a.name)}</option>`).join('')}</select>
+    </div>
+    <div class="field-group">
+      <div class="chip-row" style="margin-bottom:0;">
+        <button type="button" class="chip ${editing&&editing.splitEnabled?'active':''}" id="txn-split-toggle">SPLIT THIS ${type==='income'?'INCOME':'EXPENSE'}</button>
+      </div>
+    </div>
+    <div id="txn-split-fields" style="${editing&&editing.splitEnabled?'':'display:none;'}">
+      <div class="field-group">
+        <label class="field-label">Total bill</label>
+        <div class="amount-field"><span class="cur">${state.currency.symbol}</span><input id="txn-split-total" type="number" step="0.01" min="0" value="${editing&&editing.splitTotal?editing.splitTotal:''}"></div>
+      </div>
+      <div class="field-group">
+        <label class="field-label">Your share</label>
+        <div class="amount-field"><input id="txn-split-pct" type="number" min="1" max="100" value="${editing&&editing.splitPct?editing.splitPct:50}"><span class="cur">%</span></div>
+      </div>
+      <div class="field-group">
+        <label class="field-label">Split with</label>
+        <input id="txn-split-with" type="text" class="field" placeholder="e.g. a partner or roommate" value="${editing&&editing.splitWith?escapeHtml(editing.splitWith):''}">
+      </div>
+      <div class="scan-status" id="txn-split-preview" style="display:block;"></div>
+    </div>
+  `;
+}
+
+async function openTransactionModal(editId, presetType){
   await refreshCategories();
+  await refreshAccounts();
+  if(state.accounts.length === 0){
+    await saveAccount({name:'Main', color:randomColor(), startingBalance:0, archived:false});
+  }
   let editing = null;
   if(editId){ editing = await dbGet('transactions', editId); }
-  let type = editing ? editing.type : 'expense';
-
-  function catChips(){
-    const cats = state.categories.filter(c=>c.type===type);
-    return cats.map(c => `<button type="button" class="cat-chip ${editing && editing.category===c.name ? 'selected':''}" data-cat="${escapeHtml(c.name)}" style="${(editing && editing.category===c.name) ? `background:${c.color};border-color:${c.color};` : ''}">${escapeHtml(c.name)}</button>`).join('');
-  }
+  let type = editing ? editing.type : (presetType || 'expense');
 
   const html = `
     <div class="sheet-handle"></div>
@@ -1219,24 +2517,15 @@ async function openTransactionModal(editId){
     ${!editing ? `
       <input type="file" accept="image/*" id="scan-slip-file" style="display:none;">
       <button type="button" class="btn" id="scan-slip-btn">📷 Scan a transfer slip</button>
-      <div class="scan-hint">Reads the amount, date, and recipient from a bank slip photo. On-device only — check the result before saving.</div>
+      <div class="scan-hint">Reads the amount, date, and recipient from a bank slip photo. On-device only, check the result before saving.</div>
       <div class="scan-status" id="scan-status" style="display:none;"></div>
     ` : ''}
     <div class="segmented">
       <button type="button" class="seg-btn ${type==='expense'?'active expense':''}" data-type="expense">Expense</button>
       <button type="button" class="seg-btn ${type==='income'?'active income':''}" data-type="income">Income</button>
+      ${state.accounts.length>1 ? `<button type="button" class="seg-btn ${type==='transfer'?'active':''}" data-type="transfer">Transfer</button>` : ''}
     </div>
-    <div class="field-group">
-      <label class="field-label">Amount</label>
-      <div class="amount-field">
-        <span class="cur">${state.currency.symbol}</span>
-        <input id="txn-amount" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0.00" value="${editing? editing.amount : ''}">
-      </div>
-    </div>
-    <div class="field-group">
-      <label class="field-label">Category</label>
-      <div class="cat-chip-grid" id="txn-cat-grid">${catChips()}</div>
-    </div>
+    <div id="txn-type-fields">${txnTypeFieldsHtml(type, editing)}</div>
     <div class="field-group">
       <label class="field-label">Date</label>
       <input id="txn-date" type="date" class="field" value="${editing ? editing.date : ymd(new Date())}">
@@ -1250,7 +2539,7 @@ async function openTransactionModal(editId){
     <button class="btn" id="txn-cancel">Cancel</button>
   `;
   const ov = openOverlay(html);
-  let selectedCat = editing ? editing.category : null;
+  let selectedCat = (editing && editing.type!=='transfer') ? editing.category : null;
 
   const scanFileInput = ov.querySelector('#scan-slip-file');
   if(scanFileInput){
@@ -1261,13 +2550,112 @@ async function openTransactionModal(editId){
     });
   }
 
-  function refreshChips(){
-    ov.querySelector('#txn-cat-grid').innerHTML = catChips();
+  function updateFxPreview(){
+    const amtEl = ov.querySelector('#txn-amount');
+    const rateEl = ov.querySelector('#txn-fxrate');
+    const preview = ov.querySelector('#txn-fx-preview');
+    if(!amtEl || !rateEl || !preview) return;
+    const amt = parseFloat(amtEl.value) || 0;
+    const rate = parseFloat(rateEl.value) || 0;
+    preview.textContent = (amt && rate) ? `= ${fmtMoney(amt*rate)}` : '';
   }
+  function updateSplitPreview(){
+    const totalEl = ov.querySelector('#txn-split-total');
+    const pctEl = ov.querySelector('#txn-split-pct');
+    const preview = ov.querySelector('#txn-split-preview');
+    if(!totalEl || !pctEl || !preview) return;
+    const total = parseFloat(totalEl.value) || 0;
+    const pct = parseFloat(pctEl.value) || 0;
+    const share = total*pct/100;
+    preview.innerHTML = (total && pct) ? `Your share: ${fmtMoney(share)} <button type="button" class="txt-btn accent" id="txn-split-use" style="padding:2px 6px;">Use this amount</button>` : '';
+  }
+
+  async function suggestCategoryForNote(note, txnType){
+    if(!note || note.trim().length < 2 || txnType === 'transfer') return null;
+    const q = note.trim().toLowerCase();
+    const all = await getAllTransactions();
+    const candidates = all.filter(t => t.type === txnType && t.note && t.note.trim().length >= 2 &&
+      (t.note.trim().toLowerCase().includes(q) || q.includes(t.note.trim().toLowerCase())));
+    candidates.sort((a,b) => b.date.localeCompare(a.date));
+    return candidates.length ? candidates[0].category : null;
+  }
+
+  function wireTypeFields(){
+    const curSel = ov.querySelector('#txn-currency');
+    if(curSel){
+      curSel.addEventListener('change', () => {
+        const fxGroup = ov.querySelector('#txn-fx-group');
+        if(fxGroup) fxGroup.style.display = curSel.value === state.currency.code ? 'none' : '';
+        updateFxPreview();
+      });
+    }
+    const amtEl = ov.querySelector('#txn-amount');
+    if(amtEl) amtEl.addEventListener('input', updateFxPreview);
+    const rateEl = ov.querySelector('#txn-fxrate');
+    if(rateEl) rateEl.addEventListener('input', updateFxPreview);
+    const splitTotalEl = ov.querySelector('#txn-split-total');
+    if(splitTotalEl) splitTotalEl.addEventListener('input', updateSplitPreview);
+    const splitPctEl = ov.querySelector('#txn-split-pct');
+    if(splitPctEl) splitPctEl.addEventListener('input', updateSplitPreview);
+    updateFxPreview();
+    updateSplitPreview();
+  }
+  wireTypeFields();
+
+  const noteInput = ov.querySelector('#txn-note');
+  if(noteInput){
+    let noteDebounce;
+    noteInput.addEventListener('input', () => {
+      clearTimeout(noteDebounce);
+      noteDebounce = setTimeout(async () => {
+        if(selectedCat || type === 'transfer') return;
+        const suggestion = await suggestCategoryForNote(noteInput.value, type);
+        if(suggestion){
+          const chip = ov.querySelector(`#txn-cat-grid .cat-chip[data-cat="${CSS.escape(suggestion)}"]`);
+          if(chip && !selectedCat){ chip.click(); toast(`Suggested category: ${suggestion}`); }
+        }
+      }, 500);
+    });
+  }
+
   ov.addEventListener('click', async (e) => {
     if(e.target.id === 'scan-slip-btn'){
       const fi = ov.querySelector('#scan-slip-file');
       if(fi) fi.click();
+      return;
+    }
+    if(e.target.id === 'txn-split-toggle'){
+      const fields = ov.querySelector('#txn-split-fields');
+      const on = e.target.classList.toggle('active');
+      if(fields) fields.style.display = on ? '' : 'none';
+      return;
+    }
+    if(e.target.id === 'txn-split-use'){
+      const total = parseFloat(ov.querySelector('#txn-split-total').value) || 0;
+      const pct = parseFloat(ov.querySelector('#txn-split-pct').value) || 0;
+      ov.querySelector('#txn-amount').value = (total*pct/100).toFixed(2);
+      updateFxPreview();
+      toast('Amount updated');
+      return;
+    }
+    if(e.target.id === 'txn-fx-fetch'){
+      const curSel = ov.querySelector('#txn-currency');
+      const rateEl = ov.querySelector('#txn-fxrate');
+      const btn = e.target;
+      btn.disabled = true;
+      const prevLabel = btn.textContent;
+      btn.textContent = 'Fetching...';
+      try{
+        const rate = await fetchFxRate(curSel.value, state.currency.code);
+        rateEl.value = rate;
+        updateFxPreview();
+        toast('Rate fetched');
+      }catch(err){
+        toast("Couldn't fetch a live rate, enter it manually");
+      }finally{
+        btn.disabled = false;
+        btn.textContent = prevLabel;
+      }
       return;
     }
     const segBtn = e.target.closest('.seg-btn');
@@ -1275,14 +2663,15 @@ async function openTransactionModal(editId){
       type = segBtn.dataset.type;
       selectedCat = null;
       ov.querySelectorAll('.seg-btn').forEach(b=>b.classList.remove('active','income','expense'));
-      segBtn.classList.add('active', type);
-      refreshChips();
+      segBtn.classList.add('active', type!=='transfer' ? type : '');
+      ov.querySelector('#txn-type-fields').innerHTML = txnTypeFieldsHtml(type, editing && editing.type===type ? editing : null);
+      wireTypeFields();
       return;
     }
-    const chip = e.target.closest('.cat-chip');
+    const chip = e.target.closest('#txn-cat-grid .cat-chip');
     if(chip){
       selectedCat = chip.dataset.cat;
-      ov.querySelectorAll('.cat-chip').forEach(c=>{ c.classList.remove('selected'); c.style.background=''; c.style.borderColor=''; });
+      ov.querySelectorAll('#txn-cat-grid .cat-chip').forEach(c=>{ c.classList.remove('selected'); c.style.background=''; c.style.borderColor=''; });
       const col = catColor(selectedCat);
       chip.classList.add('selected');
       chip.style.background = col; chip.style.borderColor = col;
@@ -1299,9 +2688,40 @@ async function openTransactionModal(editId){
       const date = ov.querySelector('#txn-date').value;
       const note = ov.querySelector('#txn-note').value.trim();
       if(!amount || amount <= 0){ toast('Enter an amount above 0'); return; }
-      if(!selectedCat){ toast('Pick a category'); return; }
       if(!date){ toast('Pick a date'); return; }
-      const data = { type, amount, category:selectedCat, date, note, createdAt: editing?editing.createdAt:Date.now() };
+
+      if(type === 'transfer'){
+        const fromAccountId = parseInt(ov.querySelector('#txn-from-account').value,10);
+        const toAccountId = parseInt(ov.querySelector('#txn-to-account').value,10);
+        if(fromAccountId === toAccountId){ toast('Pick two different accounts'); return; }
+        const data = { type, amount, fromAccountId, toAccountId, date, note, createdAt: editing?editing.createdAt:Date.now() };
+        if(editing) data.id = editing.id;
+        await saveTransaction(data);
+        closeModal(); toast(editing?'Transfer updated':'Transfer saved'); renderView();
+        return;
+      }
+
+      if(!selectedCat){ toast('Pick a category'); return; }
+      const accountId = parseInt(ov.querySelector('#txn-account').value,10);
+      const currency = ov.querySelector('#txn-currency').value;
+      let fxRate = 1;
+      if(currency !== state.currency.code){
+        fxRate = parseFloat(ov.querySelector('#txn-fxrate').value);
+        if(!fxRate || fxRate <= 0){ toast('Enter an exchange rate for this currency'); return; }
+      }
+      const baseAmount = currency === state.currency.code ? amount : (amount*fxRate);
+      const data = { type, amount, category:selectedCat, accountId, currency, fxRate, baseAmount, date, note, createdAt: editing?editing.createdAt:Date.now() };
+
+      const splitToggle = ov.querySelector('#txn-split-toggle');
+      if(splitToggle && splitToggle.classList.contains('active')){
+        data.splitEnabled = true;
+        data.splitTotal = parseFloat(ov.querySelector('#txn-split-total').value) || null;
+        data.splitPct = parseFloat(ov.querySelector('#txn-split-pct').value) || null;
+        data.splitWith = ov.querySelector('#txn-split-with').value.trim();
+      } else {
+        data.splitEnabled = false;
+      }
+
       if(editing) data.id = editing.id;
       await saveTransaction(data);
       closeModal();
@@ -1312,6 +2732,7 @@ async function openTransactionModal(editId){
 }
 
 function openCategoryModal(type, existing){
+  const rolloverOn = existing ? !!existing.rollover : false;
   const html = `
     <div class="sheet-handle"></div>
     <div class="sheet-title">${existing ? 'Edit category' : 'New ' + type + ' category'}</div>
@@ -1326,6 +2747,12 @@ function openCategoryModal(type, existing){
         <span class="cur">${state.currency.symbol}</span>
         <input id="cat-budget" type="number" inputmode="decimal" min="0" step="0.01" placeholder="No limit" value="${existing && existing.budget ? existing.budget : ''}">
       </div>
+    </div>
+    <div class="field-group">
+      <div class="chip-row" style="margin-bottom:0;">
+        <button type="button" class="chip ${rolloverOn?'active':''}" id="cat-rollover-toggle">ROLL OVER UNUSED BUDGET</button>
+      </div>
+      <div style="font-size:11px; color:var(--ink-faint); margin-top:8px; line-height:1.5;">If you underspend, the leftover carries into next month's budget. If you overspend, next month's budget shrinks by the difference.</div>
     </div>` : ''}
     <div class="field-group">
       <label class="field-label">Color</label>
@@ -1335,15 +2762,21 @@ function openCategoryModal(type, existing){
     <button class="btn" id="cat-cancel">Cancel</button>
   `;
   const ov = openOverlay(html);
+  let rollover = rolloverOn;
   ov.addEventListener('click', async (e) => {
     if(e.target.id === 'cat-cancel'){ closeModal(); return; }
+    if(e.target.id === 'cat-rollover-toggle'){
+      rollover = !rollover;
+      e.target.classList.toggle('active', rollover);
+      return;
+    }
     if(e.target.id === 'cat-save'){
       const name = ov.querySelector('#cat-name').value.trim();
       if(!name){ toast('Enter a category name'); return; }
       const color = ov.querySelector('#cat-color').value;
       const budgetInput = ov.querySelector('#cat-budget');
       const budget = budgetInput && budgetInput.value ? parseFloat(budgetInput.value) : null;
-      const data = { name, type, color, budget };
+      const data = { name, type, color, budget, rollover: type==='expense' ? rollover : false };
       if(existing) data.id = existing.id;
       await saveCategory(data);
       closeModal();
@@ -1357,9 +2790,379 @@ function randomColor(){
   return palette[Math.floor(Math.random()*palette.length)];
 }
 
+/* ---------- account modal ---------- */
+function openAccountModal(existing){
+  const html = `
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">${existing ? 'Edit account' : 'New account'}</div>
+    <div class="field-group">
+      <label class="field-label">Name</label>
+      <input id="acct-name" type="text" class="field" placeholder="e.g. Cash, Bank, e-Wallet" value="${existing?escapeHtml(existing.name):''}">
+    </div>
+    <div class="field-group">
+      <label class="field-label">Starting balance</label>
+      <div class="amount-field"><span class="cur">${state.currency.symbol}</span><input id="acct-balance" type="number" inputmode="decimal" step="0.01" value="${existing&&existing.startingBalance?existing.startingBalance:'0'}"></div>
+    </div>
+    <div class="field-group">
+      <label class="field-label">Color</label>
+      <input id="acct-color" type="color" class="field" style="height:44px; padding:4px;" value="${existing?existing.color:randomColor()}">
+    </div>
+    <button class="btn primary" id="acct-save">Save account</button>
+    ${existing ? `<button class="btn danger" id="acct-delete">Delete</button>` : ''}
+    <button class="btn" id="acct-cancel">Cancel</button>
+  `;
+  const ov = openOverlay(html);
+  ov.addEventListener('click', async (e) => {
+    if(e.target.id === 'acct-cancel'){ closeModal(); return; }
+    if(e.target.id === 'acct-delete'){
+      openConfirm('Remove this account? Past transactions keep a record, but this account will no longer show on the dashboard.', async () => {
+        await deleteAccount(existing.id); closeModal(); toast('Account removed'); renderView();
+      }, true);
+      return;
+    }
+    if(e.target.id === 'acct-save'){
+      const name = ov.querySelector('#acct-name').value.trim();
+      if(!name){ toast('Give the account a name'); return; }
+      const startingBalance = parseFloat(ov.querySelector('#acct-balance').value) || 0;
+      const color = ov.querySelector('#acct-color').value;
+      const data = { name, startingBalance, color, archived:false };
+      if(existing) data.id = existing.id;
+      await saveAccount(data);
+      closeModal(); toast('Account saved'); renderView();
+    }
+  });
+}
+
+/* ---------- recurring transaction modal ---------- */
+function openRecurringModal(existing){
+  const expenseCats = state.categories.filter(c=>c.type==='expense');
+  const incomeCats = state.categories.filter(c=>c.type==='income');
+  let type = existing ? existing.type : 'expense';
+
+  function catOptionsHtml(){
+    const cats = type==='income' ? incomeCats : expenseCats;
+    return cats.map(c => `<option value="${escapeHtml(c.name)}" ${existing&&existing.category===c.name?'selected':''}>${escapeHtml(c.name)}</option>`).join('');
+  }
+
+  const html = `
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">${existing ? 'Edit recurring transaction' : 'New recurring transaction'}</div>
+    <div class="segmented">
+      <button type="button" class="seg-btn ${type==='expense'?'active expense':''}" data-rtype="expense">Expense</button>
+      <button type="button" class="seg-btn ${type==='income'?'active income':''}" data-rtype="income">Income</button>
+    </div>
+    <div class="field-group">
+      <label class="field-label">Name</label>
+      <input id="rec-name" type="text" class="field" placeholder="e.g. Rent, Salary, Netflix" value="${existing?escapeHtml(existing.name||''):''}">
+    </div>
+    <div class="field-group">
+      <label class="field-label">Amount</label>
+      <div class="amount-field"><span class="cur">${state.currency.symbol}</span><input id="rec-amount" type="number" inputmode="decimal" step="0.01" value="${existing?existing.amount:''}"></div>
+    </div>
+    <div class="field-group">
+      <label class="field-label">Category</label>
+      <select id="rec-category" class="field select-native">${catOptionsHtml()}</select>
+    </div>
+    <div class="field-group">
+      <label class="field-label">Account</label>
+      <select id="rec-account" class="field select-native">${state.accounts.map(a=>`<option value="${a.id}" ${existing&&existing.accountId===a.id?'selected':''}>${escapeHtml(a.name)}</option>`).join('')}</select>
+    </div>
+    <div class="field-group">
+      <label class="field-label">Repeats</label>
+      <select id="rec-frequency" class="field select-native">
+        <option value="weekly" ${existing&&existing.frequency==='weekly'?'selected':''}>Weekly</option>
+        <option value="monthly" ${!existing||existing.frequency==='monthly'?'selected':''}>Monthly</option>
+        <option value="yearly" ${existing&&existing.frequency==='yearly'?'selected':''}>Yearly</option>
+      </select>
+    </div>
+    <div class="field-group">
+      <label class="field-label">Next due date</label>
+      <input id="rec-nextdue" type="date" class="field" value="${existing?existing.nextDueDate:ymd(new Date())}">
+    </div>
+    <div class="field-group">
+      <label class="field-label">When due</label>
+      <div class="chip-row">
+        <button type="button" class="chip ${(!existing || existing.autoPost) ? 'active' : ''}" data-autopost="1">AUTO-POST</button>
+        <button type="button" class="chip ${(existing && !existing.autoPost) ? 'active' : ''}" data-autopost="0">ASK ME FIRST</button>
+      </div>
+    </div>
+    <button class="btn primary" id="rec-save">Save</button>
+    ${existing ? `<button class="btn danger" id="rec-delete">Delete</button>` : ''}
+    <button class="btn" id="rec-cancel">Cancel</button>
+  `;
+  const ov = openOverlay(html);
+  let autoPost = existing ? !!existing.autoPost : true;
+
+  ov.addEventListener('click', async (e) => {
+    const typeBtn = e.target.closest('[data-rtype]');
+    if(typeBtn){
+      type = typeBtn.dataset.rtype;
+      ov.querySelectorAll('[data-rtype]').forEach(b=>b.classList.remove('active','income','expense'));
+      typeBtn.classList.add('active', type);
+      ov.querySelector('#rec-category').innerHTML = catOptionsHtml();
+      return;
+    }
+    const apBtn = e.target.closest('[data-autopost]');
+    if(apBtn){
+      autoPost = apBtn.dataset.autopost === '1';
+      ov.querySelectorAll('[data-autopost]').forEach(b=>b.classList.remove('active'));
+      apBtn.classList.add('active');
+      return;
+    }
+    if(e.target.id === 'rec-cancel'){ closeModal(); return; }
+    if(e.target.id === 'rec-delete'){
+      await deleteRecurring(existing.id); closeModal(); toast('Recurring transaction removed'); renderView();
+      return;
+    }
+    if(e.target.id === 'rec-save'){
+      const name = ov.querySelector('#rec-name').value.trim();
+      const amount = parseFloat(ov.querySelector('#rec-amount').value);
+      const category = ov.querySelector('#rec-category').value;
+      const accountId = parseInt(ov.querySelector('#rec-account').value,10);
+      const frequency = ov.querySelector('#rec-frequency').value;
+      const nextDueDate = ov.querySelector('#rec-nextdue').value;
+      if(!amount || amount<=0){ toast('Enter an amount'); return; }
+      if(!category){ toast('Pick a category'); return; }
+      if(!nextDueDate){ toast('Pick the next due date'); return; }
+      const data = { name, type, amount, category, accountId, frequency, nextDueDate, autoPost, active:true };
+      if(existing) data.id = existing.id;
+      await saveRecurring(data);
+      closeModal(); toast('Recurring transaction saved'); renderView();
+    }
+  });
+}
+
+/* ---------- goal modal ---------- */
+function autoTrackFieldsHtml(g){
+  const auto = g ? !!g.autoTrack : false;
+  const share = (g && g.autoSharePct) ? g.autoSharePct : 20;
+  return `
+    <div class="field-group">
+      <label class="field-label">Also count a share of net savings</label>
+      <div class="chip-row" style="margin-bottom:${auto?'10px':'0'};">
+        <button type="button" class="chip ${auto?'active':''}" id="goal-autotrack-toggle" data-on="${auto?'1':'0'}">${auto?'ON':'OFF'}, auto-counts part of each month's leftover income</button>
+      </div>
+      <div id="goal-autoshare-wrap" style="${auto?'':'display:none;'}">
+        <label class="field-label">Share of net savings counted</label>
+        <div class="amount-field"><input id="goal-autoshare" type="number" min="0" max="100" value="${share}"><span class="cur">%</span></div>
+      </div>
+    </div>
+  `;
+}
+
+function goalTypeFieldsHtml(type, g){
+  const expenseCats = state.categories.filter(c => c.type === 'expense');
+  if(type === 'monthly'){
+    const linked = (g && g.type==='monthly') ? (g.linkedCategories||[]) : [];
+    return `
+      <div class="field-group">
+        <label class="field-label">Monthly target</label>
+        <div class="amount-field"><span class="cur">${state.currency.symbol}</span><input id="goal-amount" type="number" inputmode="decimal" min="0" step="0.01" value="${g&&g.targetAmount?g.targetAmount:''}" placeholder="0.00"></div>
+      </div>
+      <div class="field-group">
+        <label class="field-label">Counts transactions logged under</label>
+        <div class="cat-chip-grid" id="goal-cat-grid">${expenseCats.map(c=>`<button type="button" class="cat-chip ${linked.includes(c.name)?'selected':''}" data-cat="${escapeHtml(c.name)}" style="${linked.includes(c.name)?`background:${c.color};border-color:${c.color};`:''}">${escapeHtml(c.name)}</button>`).join('')}</div>
+      </div>
+      ${autoTrackFieldsHtml(g && g.type==='monthly' ? g : null)}
+    `;
+  }
+  if(type === 'target'){
+    const linked = (g && g.type==='target') ? (g.linkedCategories||[]) : [];
+    return `
+      <div class="field-group">
+        <label class="field-label">Total target</label>
+        <div class="amount-field"><span class="cur">${state.currency.symbol}</span><input id="goal-amount" type="number" inputmode="decimal" min="0" step="0.01" value="${g&&g.targetAmount?g.targetAmount:''}" placeholder="0.00"></div>
+      </div>
+      <div class="field-group">
+        <label class="field-label">Target date (optional)</label>
+        <input id="goal-date" type="date" class="field" value="${g&&g.targetDate?g.targetDate:''}">
+      </div>
+      <div class="field-group">
+        <label class="field-label">Counts transactions logged under</label>
+        <div class="cat-chip-grid" id="goal-cat-grid">${expenseCats.map(c=>`<button type="button" class="cat-chip ${linked.includes(c.name)?'selected':''}" data-cat="${escapeHtml(c.name)}" style="${linked.includes(c.name)?`background:${c.color};border-color:${c.color};`:''}">${escapeHtml(c.name)}</button>`).join('')}</div>
+      </div>
+      ${autoTrackFieldsHtml(g && g.type==='target' ? g : null)}
+    `;
+  }
+  if(type === 'debt'){
+    const linked = (g && g.type==='debt') ? (g.linkedCategories||[]) : [];
+    return `
+      <div class="field-group">
+        <label class="field-label">Total debt amount</label>
+        <div class="amount-field"><span class="cur">${state.currency.symbol}</span><input id="goal-amount" type="number" inputmode="decimal" min="0" step="0.01" value="${g&&g.principal?g.principal:''}" placeholder="0.00"></div>
+      </div>
+      <div class="field-group">
+        <label class="field-label">Payments count toward payoff when logged under</label>
+        <div class="cat-chip-grid" id="goal-cat-grid">${expenseCats.map(c=>`<button type="button" class="cat-chip ${linked.includes(c.name)?'selected':''}" data-cat="${escapeHtml(c.name)}" style="${linked.includes(c.name)?`background:${c.color};border-color:${c.color};`:''}">${escapeHtml(c.name)}</button>`).join('')}</div>
+      </div>
+    `;
+  }
+  // split
+  const buckets = (g && g.type==='split' && g.buckets && g.buckets.length) ? g.buckets : [
+    {name:'Needs', pct:50}, {name:'Wants', pct:30}, {name:'Save & invest', pct:20}
+  ];
+  const assignments = (g && g.type==='split' && g.categoryAssignments) ? g.categoryAssignments : {};
+  return `
+    <div class="field-group">
+      <label class="field-label">Buckets &amp; target share of income</label>
+      ${buckets.map((b,i) => `
+        <div style="display:flex; gap:8px; margin-bottom:8px;">
+          <input type="text" class="field goal-bucket-name" data-bucket="${i}" value="${escapeHtml(b.name)}" style="flex:2;">
+          <div class="amount-field" style="flex:1;"><input type="number" class="goal-bucket-pct" data-bucket="${i}" min="0" max="100" value="${b.pct}"><span class="cur">%</span></div>
+        </div>
+      `).join('')}
+      <div class="scan-status" id="goal-split-total" style="display:block;"></div>
+    </div>
+    <div class="field-group">
+      <label class="field-label">Assign each category to a bucket</label>
+      ${expenseCats.length ? expenseCats.map(c => `
+        <div class="list-item" style="padding:8px 0;">
+          <span class="cat-row-left"><span class="dot" style="background:${c.color}"></span><span class="name">${escapeHtml(c.name)}</span></span>
+          <select class="select-native goal-cat-assign" data-cat="${escapeHtml(c.name)}" style="width:auto; padding:6px 8px; font-size:12.5px;">
+            <option value="">Unassigned</option>
+            ${buckets.map((b,i)=>`<option value="${i}" ${assignments[c.name]===i?'selected':''}>${escapeHtml(b.name)}</option>`).join('')}
+          </select>
+        </div>
+      `).join('') : `<div style="color:var(--ink-faint); font-size:12.5px;">Add an expense category in Setup to assign it here. Buckets with no categories (like "Save & invest") automatically track whatever's left over from income.</div>`}
+    </div>
+  `;
+}
+
+async function openGoalModal(editId){
+  await refreshCategories();
+  let existing = null;
+  if(editId){ existing = await dbGet('goals', editId); }
+  let type = existing ? existing.type : 'monthly';
+
+  const html = `
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">${existing ? 'Edit goal' : 'New goal'}</div>
+    <div class="field-group">
+      <label class="field-label">Name</label>
+      <input id="goal-name" type="text" class="field" placeholder="e.g. Financial freedom fund" value="${existing?escapeHtml(existing.name):''}">
+    </div>
+    <div class="chip-row" id="goal-type-chips">
+      <button type="button" class="chip ${type==='monthly'?'active':''}" data-gtype="monthly">MONTHLY TARGET</button>
+      <button type="button" class="chip ${type==='target'?'active':''}" data-gtype="target">TARGET BY DATE</button>
+      <button type="button" class="chip ${type==='split'?'active':''}" data-gtype="split">INCOME SPLIT</button>
+      <button type="button" class="chip ${type==='debt'?'active':''}" data-gtype="debt">DEBT PAYOFF</button>
+    </div>
+    <div id="goal-fields">${goalTypeFieldsHtml(type, existing)}</div>
+    <button class="btn primary" id="goal-save">Save goal</button>
+    ${existing ? `<button class="btn danger" id="goal-delete">Delete</button>` : ''}
+    <button class="btn" id="goal-cancel">Cancel</button>
+  `;
+  const ov = openOverlay(html);
+
+  let selectedCats = new Set();
+  if(existing && (existing.type==='monthly' || existing.type==='target' || existing.type==='debt')) (existing.linkedCategories||[]).forEach(c=>selectedCats.add(c));
+  let categoryAssignments = (existing && existing.type==='split') ? {...(existing.categoryAssignments||{})} : {};
+
+  function updateSplitTotal(){
+    const total = Array.from(ov.querySelectorAll('.goal-bucket-pct')).reduce((s,el)=>s+(parseFloat(el.value)||0),0);
+    const el = ov.querySelector('#goal-split-total');
+    if(el) el.textContent = total === 100 ? 'Total: 100%' : `Total: ${total}% (doesn't need to be exactly 100, but usually should be)`;
+  }
+  if(type === 'split') setTimeout(updateSplitTotal, 0);
+
+  ov.addEventListener('input', (e) => {
+    if(e.target.classList.contains('goal-bucket-pct')) updateSplitTotal();
+  });
+  ov.addEventListener('change', (e) => {
+    if(e.target.classList.contains('goal-cat-assign')){
+      const cat = e.target.dataset.cat;
+      const val = e.target.value;
+      if(val === '') delete categoryAssignments[cat];
+      else categoryAssignments[cat] = parseInt(val,10);
+    }
+  });
+
+  ov.addEventListener('click', async (e) => {
+    const typeBtn = e.target.closest('[data-gtype]');
+    if(typeBtn){
+      type = typeBtn.dataset.gtype;
+      ov.querySelectorAll('[data-gtype]').forEach(b=>b.classList.remove('active'));
+      typeBtn.classList.add('active');
+      const preset = (existing && existing.type === type) ? existing : null;
+      ov.querySelector('#goal-fields').innerHTML = goalTypeFieldsHtml(type, preset);
+      selectedCats = new Set();
+      if(preset && (type==='monthly'||type==='target'||type==='debt')) (preset.linkedCategories||[]).forEach(c=>selectedCats.add(c));
+      categoryAssignments = (preset && type==='split') ? {...(preset.categoryAssignments||{})} : {};
+      if(type === 'split') setTimeout(updateSplitTotal, 0);
+      return;
+    }
+    const catChip = e.target.closest('#goal-cat-grid .cat-chip');
+    if(catChip){
+      const name = catChip.dataset.cat;
+      if(selectedCats.has(name)){
+        selectedCats.delete(name); catChip.classList.remove('selected');
+        catChip.style.background=''; catChip.style.borderColor='';
+      } else {
+        selectedCats.add(name); catChip.classList.add('selected');
+        const col = catColor(name); catChip.style.background = col; catChip.style.borderColor = col;
+      }
+      return;
+    }
+    if(e.target.id === 'goal-autotrack-toggle'){
+      const on = e.target.dataset.on === '1';
+      const next = !on;
+      e.target.dataset.on = next ? '1' : '0';
+      e.target.classList.toggle('active', next);
+      e.target.textContent = (next?'ON':'OFF') + ", auto-counts part of each month's leftover income";
+      const wrap = ov.querySelector('#goal-autoshare-wrap');
+      if(wrap) wrap.style.display = next ? '' : 'none';
+      return;
+    }
+    if(e.target.id === 'goal-cancel'){ closeModal(); return; }
+    if(e.target.id === 'goal-delete'){
+      await dbDelete('goals', existing.id);
+      closeModal(); toast('Goal deleted'); renderView();
+      return;
+    }
+    if(e.target.id === 'goal-save'){
+      const name = ov.querySelector('#goal-name').value.trim();
+      if(!name){ toast('Give the goal a name'); return; }
+      const data = { name, type };
+      if(existing) data.id = existing.id;
+      data.createdAt = existing ? existing.createdAt : Date.now();
+      data.startDate = (existing && existing.startDate) ? existing.startDate : ymd(new Date());
+
+      if(type === 'monthly' || type === 'target'){
+        const amount = parseFloat(ov.querySelector('#goal-amount').value);
+        if(!amount || amount <= 0){ toast('Enter a target amount'); return; }
+        data.targetAmount = amount;
+        data.linkedCategories = Array.from(selectedCats);
+        const toggle = ov.querySelector('#goal-autotrack-toggle');
+        data.autoTrack = toggle ? toggle.dataset.on === '1' : false;
+        const shareInput = ov.querySelector('#goal-autoshare');
+        data.autoSharePct = shareInput ? (parseFloat(shareInput.value)||0) : 0;
+        if(type === 'target'){
+          const dateVal = ov.querySelector('#goal-date').value;
+          data.targetDate = dateVal || null;
+        }
+      } else if(type === 'debt'){
+        const amount = parseFloat(ov.querySelector('#goal-amount').value);
+        if(!amount || amount <= 0){ toast('Enter the total debt amount'); return; }
+        data.principal = amount;
+        data.linkedCategories = Array.from(selectedCats);
+      } else {
+        const names = Array.from(ov.querySelectorAll('.goal-bucket-name'));
+        const pcts = Array.from(ov.querySelectorAll('.goal-bucket-pct'));
+        data.buckets = names.map((el,i) => ({ name: el.value.trim() || `Bucket ${i+1}`, pct: parseFloat(pcts[i].value)||0 }));
+        data.categoryAssignments = categoryAssignments;
+      }
+
+      if(existing){ await dbPut('goals', data); } else { await dbAdd('goals', data); }
+      closeModal();
+      toast('Goal saved');
+      renderView();
+    }
+  });
+}
+
 /* ---------- slip scanning (on-device OCR, best-effort) ----------
    Thai bank transfer slips print the amount, date, and recipient as
-   text — the small QR on them is only a verification token, it does
+   text. The small QR on them is only a verification token, it does
    not contain that data. So this reads the image with OCR and then
    guesses the fields with a few heuristics. Always review before saving. */
 function loadTesseract(){
@@ -1482,8 +3285,8 @@ async function handleSlipScan(file, ov){
       if(chip) chip.click();
     }
     statusEl.textContent = parsed.amount
-      ? 'Filled in from the slip — check everything before saving.'
-      : "Couldn't find an amount on that slip — enter it manually.";
+      ? 'Filled in from the slip. Check everything before saving.'
+      : "Couldn't find an amount on that slip. Enter it manually.";
   }catch(err){
     statusEl.textContent = 'Could not read that image. Enter the details manually.';
   }finally{
@@ -1508,10 +3311,10 @@ function openConfirm(message, onConfirm, danger){
 
 /* ---------- export / import ---------- */
 async function exportBackup(){
-  const [transactions, categories, meta] = await Promise.all([
-    dbGetAll('transactions'), dbGetAll('categories'), dbGetAll('meta')
+  const [transactions, categories, meta, accounts, recurring, goals, boardItems] = await Promise.all([
+    dbGetAll('transactions'), dbGetAll('categories'), dbGetAll('meta'), dbGetAll('accounts'), dbGetAll('recurring'), dbGetAll('goals'), dbGetAll('boardItems')
   ]);
-  const payload = { version:1, exportedAt:new Date().toISOString(), transactions, categories, meta };
+  const payload = { version:3, exportedAt:new Date().toISOString(), transactions, categories, meta, accounts, recurring, goals, boardItems };
   const blob = new Blob([JSON.stringify(payload,null,2)], {type:'application/json'});
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -1527,17 +3330,52 @@ async function importBackup(file){
     const payload = JSON.parse(text);
     if(!payload.transactions || !payload.categories) throw new Error('bad file');
     await dbClear('transactions'); await dbClear('categories'); await dbClear('meta');
+    await dbClear('accounts'); await dbClear('recurring'); await dbClear('goals'); await dbClear('boardItems');
     for(const t of payload.transactions){ const {id, ...rest} = t; await dbAdd('transactions', rest); }
     for(const c of payload.categories){ const {id, ...rest} = c; await dbAdd('categories', rest); }
     for(const m of (payload.meta||[])){ await dbPut('meta', m); }
+    for(const a of (payload.accounts||[])){ const {id, ...rest} = a; await dbAdd('accounts', rest); }
+    for(const r of (payload.recurring||[])){ const {id, ...rest} = r; await dbAdd('recurring', rest); }
+    for(const g of (payload.goals||[])){ const {id, ...rest} = g; await dbAdd('goals', rest); }
+    for(const b of (payload.boardItems||[])){ const {id, ...rest} = b; await dbAdd('boardItems', rest); }
     await refreshCategories();
+    await refreshAccounts();
     await loadCurrency();
     await loadTheme();
+    await ensureSeed(); // in case the backup pre-dates accounts
     toast('Backup restored');
     renderView();
   }catch(err){
     toast('Could not read that backup file');
   }
+}
+
+function csvEscape(val){
+  const s = String(val==null?'':val);
+  return /[",\n]/.test(s) ? `"${s.replace(/"/g,'""')}"` : s;
+}
+async function exportCSV(){
+  const txns = await getAllTransactions();
+  const header = ['Date','Type','Category','Account','Amount','Currency','FX Rate','Base Amount','Note'];
+  const rows = [header];
+  for(const t of txns){
+    if(t.type === 'transfer'){
+      const from = accountById(t.fromAccountId) ? accountById(t.fromAccountId).name : '';
+      const to = accountById(t.toAccountId) ? accountById(t.toAccountId).name : '';
+      rows.push([t.date, 'transfer', '', `${from} → ${to}`, t.amount, state.currency.code, 1, t.amount, t.note||'']);
+    } else {
+      const acct = accountById(t.accountId);
+      rows.push([t.date, t.type, t.category, acct?acct.name:'', t.amount, t.currency||state.currency.code, t.fxRate||1, txnValue(t), t.note||'']);
+    }
+  }
+  const csv = rows.map(r => r.map(csvEscape).join(',')).join('\r\n');
+  const blob = new Blob([csv], {type:'text/csv'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `ledger-transactions-${ymd(new Date())}.csv`;
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(url);
+  toast('CSV downloaded');
 }
 
 /* ---------- event wiring ---------- */
@@ -1548,8 +3386,26 @@ function attachViewHandlers(){
   viewRoot.querySelectorAll('[data-open-add]').forEach(el => {
     el.addEventListener('click', () => openTransactionModal(null));
   });
+  viewRoot.querySelectorAll('[data-open-add-goal]').forEach(el => {
+    el.addEventListener('click', () => openGoalModal(null));
+  });
+  viewRoot.querySelectorAll('[data-open-add-board]').forEach(el => {
+    el.addEventListener('click', () => openAddBoardItemSheet());
+  });
+  viewRoot.querySelectorAll('[data-editgoal]').forEach(el => {
+    el.addEventListener('click', () => openGoalModal(parseInt(el.dataset.editgoal,10)));
+  });
   viewRoot.querySelectorAll('[data-goto]').forEach(el => {
     el.addEventListener('click', () => { state.tab = el.dataset.goto; renderView(); });
+  });
+  viewRoot.querySelectorAll('[data-gotoaccount]').forEach(el => {
+    el.addEventListener('click', () => { state.tab = 'ledger'; state.ledgerAccount = el.dataset.gotoaccount; renderView(); });
+  });
+  viewRoot.querySelectorAll('[data-confirmrec]').forEach(el => {
+    el.addEventListener('click', async () => { await confirmRecurring(parseInt(el.dataset.confirmrec,10)); toast('Posted'); renderView(); });
+  });
+  viewRoot.querySelectorAll('[data-skiprec]').forEach(el => {
+    el.addEventListener('click', async () => { await skipRecurring(parseInt(el.dataset.skiprec,10)); toast('Skipped'); renderView(); });
   });
 
   if(state.tab === 'ledger'){
@@ -1561,6 +3417,8 @@ function attachViewHandlers(){
     });
     const catSel = viewRoot.querySelector('#ledger-cat-select');
     if(catSel) catSel.addEventListener('change', () => { state.ledgerCategory = catSel.value; renderView(); });
+    const acctSel = viewRoot.querySelector('#ledger-account-select');
+    if(acctSel) acctSel.addEventListener('change', () => { state.ledgerAccount = acctSel.value; renderView(); });
     const search = viewRoot.querySelector('#ledger-search');
     if(search){
       search.addEventListener('input', () => { state.ledgerSearch = search.value; });
@@ -1570,13 +3428,92 @@ function attachViewHandlers(){
     }
   }
 
+  if(state.tab === 'board'){
+    attachBoardInteraction();
+    viewRoot.querySelectorAll('[data-boardtool]').forEach(el => {
+      el.addEventListener('click', async () => {
+        const tool = el.dataset.boardtool;
+        if(tool === 'deselect'){ state.boardSelectedId = null; renderView(); return; }
+        const item = boardItemsCache.find(x => x.id === state.boardSelectedId);
+        if(!item) return;
+        if(tool === 'delete'){
+          openConfirm('Remove this from your board?', async () => {
+            await dbDelete('boardItems', item.id);
+            state.boardSelectedId = null;
+            toast('Removed'); renderView();
+          }, true);
+          return;
+        }
+        if(tool === 'front'){
+          item.zIndex = nextBoardZ();
+          await dbPut('boardItems', item);
+          renderView();
+          return;
+        }
+        if(tool === 'frame' && item.type === 'photo'){
+          const order = [null,'polaroid','washi'];
+          const idx = order.indexOf(item.frame||null);
+          item.frame = order[(idx+1)%order.length];
+          await dbPut('boardItems', item);
+          renderView();
+          return;
+        }
+        if(tool === 'caption' && (item.type==='photo' || item.type==='text')){
+          openBoardTextModal(item);
+          return;
+        }
+        if(tool === 'goal'){
+          openBoardGoalLinkModal(item);
+          return;
+        }
+      });
+    });
+  }
+
   if(state.tab === 'analytics'){
     viewRoot.querySelectorAll('[data-range]').forEach(el => {
       el.addEventListener('click', () => { state.analyticsRange = parseInt(el.dataset.range,10); renderView(); });
     });
+    const acctSel = viewRoot.querySelector('#analytics-account-select');
+    if(acctSel) acctSel.addEventListener('change', () => { state.analyticsAccount = acctSel.value; renderView(); });
+    viewRoot.querySelectorAll('[data-slice]').forEach(el => {
+      el.addEventListener('click', () => { state.analyticsSlice = el.dataset.slice; renderView(); });
+    });
+    viewRoot.querySelectorAll('[data-drillmonth]').forEach(el => {
+      el.addEventListener('click', () => {
+        state.tab = 'ledger'; state.month = el.dataset.drillmonth;
+        state.ledgerFilter = 'all'; state.ledgerCategory = 'all'; state.ledgerAccount = 'all';
+        renderView();
+      });
+    });
+    viewRoot.querySelectorAll('[data-drillcat]').forEach(el => {
+      el.addEventListener('click', () => {
+        state.tab = 'ledger'; state.ledgerCategory = el.dataset.drillcat; state.ledgerFilter = 'expense';
+        renderView();
+      });
+    });
+    viewRoot.querySelectorAll('[data-drillaccount]').forEach(el => {
+      el.addEventListener('click', () => {
+        const acct = state.accounts.find(a => a.name === el.dataset.drillaccount);
+        if(acct){ state.tab = 'ledger'; state.ledgerAccount = String(acct.id); state.ledgerFilter = 'expense'; renderView(); }
+      });
+    });
+    viewRoot.querySelectorAll('[data-heatday]').forEach(el => {
+      el.addEventListener('click', () => {
+        state.tab = 'ledger'; state.month = el.dataset.heatday;
+        state.ledgerFilter = 'all'; state.ledgerCategory = 'all'; state.ledgerAccount = 'all';
+        renderView();
+      });
+    });
   }
 
   if(state.tab === 'settings'){
+    const pinBtn = viewRoot.querySelector('#pin-setup-btn');
+    if(pinBtn) pinBtn.addEventListener('click', async () => {
+      const hash = await getPinHash();
+      openPinSetupModal(!!hash);
+    });
+
     viewRoot.querySelectorAll('[data-theme]').forEach(el => {
       el.addEventListener('click', async () => { await setThemePref(el.dataset.theme); renderView(); });
     });
@@ -1607,6 +3544,8 @@ function attachViewHandlers(){
 
     const exportBtn = viewRoot.querySelector('#export-data');
     if(exportBtn) exportBtn.addEventListener('click', exportBackup);
+    const exportCsvBtn = viewRoot.querySelector('#export-csv');
+    if(exportCsvBtn) exportCsvBtn.addEventListener('click', exportCSV);
     const importBtn = viewRoot.querySelector('#import-data');
     const importFile = viewRoot.querySelector('#import-file');
     if(importBtn) importBtn.addEventListener('click', () => importFile.click());
@@ -1619,9 +3558,45 @@ function attachViewHandlers(){
     if(clearBtn) clearBtn.addEventListener('click', () => {
       openConfirm('This permanently erases every transaction, category, and budget on this device. This cannot be undone.', async () => {
         await dbClear('transactions'); await dbClear('categories'); await dbClear('meta');
-        await ensureSeed(); await refreshCategories(); await loadCurrency(); await loadTheme();
+        await dbClear('accounts'); await dbClear('recurring'); await dbClear('goals'); await dbClear('boardItems');
+        await ensureSeed(); await refreshCategories(); await refreshAccounts(); await loadCurrency(); await loadTheme();
         toast('All data erased'); renderView();
       }, true);
+    });
+
+    const addAcct = viewRoot.querySelector('#add-account');
+    if(addAcct) addAcct.addEventListener('click', () => openAccountModal(null));
+    viewRoot.querySelectorAll('[data-editaccount]').forEach(el => {
+      el.addEventListener('click', () => {
+        const acct = state.accounts.find(a => a.id === parseInt(el.dataset.editaccount,10));
+        if(acct) openAccountModal(acct);
+      });
+    });
+    viewRoot.querySelectorAll('[data-delaccount]').forEach(el => {
+      el.addEventListener('click', () => {
+        const id = parseInt(el.dataset.delaccount,10);
+        const acct = state.accounts.find(a => a.id === id);
+        openConfirm(`Remove "${escapeHtml(acct?acct.name:'')}"? Past transactions keep a record, but this account will no longer show on the dashboard.`, async () => {
+          await deleteAccount(id); toast('Account removed'); renderView();
+        }, true);
+      });
+    });
+
+    const addRec = viewRoot.querySelector('#add-recurring');
+    if(addRec) addRec.addEventListener('click', () => openRecurringModal(null));
+    viewRoot.querySelectorAll('[data-editrecurring]').forEach(el => {
+      el.addEventListener('click', async () => {
+        const rule = await dbGet('recurring', parseInt(el.dataset.editrecurring,10));
+        if(rule) openRecurringModal(rule);
+      });
+    });
+    viewRoot.querySelectorAll('[data-delrecurring]').forEach(el => {
+      el.addEventListener('click', () => {
+        const id = parseInt(el.dataset.delrecurring,10);
+        openConfirm('Remove this recurring transaction? It will stop posting going forward.', async () => {
+          await deleteRecurring(id); toast('Removed'); renderView();
+        }, true);
+      });
     });
   }
 }
@@ -1630,16 +3605,43 @@ function attachViewHandlers(){
 document.querySelectorAll('.tab-btn').forEach(btn => {
   btn.addEventListener('click', () => { state.tab = btn.dataset.tab; renderView(); });
 });
-document.getElementById('fab-add').addEventListener('click', () => openTransactionModal(null));
+document.getElementById('fab-add').addEventListener('click', () => {
+  if(state.tab === 'goals') openGoalModal(null);
+  else if(state.tab === 'board') openAddBoardItemSheet();
+  else openTransactionModal(null);
+});
 
 /* ---------- boot ---------- */
 (async function init(){
   await ensureSeed();
   await refreshCategories();
+  await refreshAccounts();
   await loadCurrency();
   await loadTheme();
-  await renderView();
+  await processRecurring();
+  await recordNetWorthSnapshot();
+
+  async function proceed(){
+    await renderView();
+    handleQuickAddShortcut();
+  }
+
+  const pinHash = await getPinHash();
+  if(pinHash){
+    renderLockScreen(proceed);
+  } else {
+    await proceed();
+  }
 })();
+
+function handleQuickAddShortcut(){
+  const params = new URLSearchParams(location.search);
+  const action = params.get('action');
+  if(action === 'new-expense' || action === 'new-income'){
+    openTransactionModal(null, action === 'new-income' ? 'income' : 'expense');
+    history.replaceState({}, '', location.pathname);
+  }
+}
 
 if('serviceWorker' in navigator){
   window.addEventListener('load', () => {

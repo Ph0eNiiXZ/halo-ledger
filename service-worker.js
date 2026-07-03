@@ -1,11 +1,11 @@
-// Ledger — service worker
+// Ledger: service worker
 // Caches the app shell so it works fully offline once installed.
 // All financial data lives in IndexedDB on the device, never here, never remote.
 //
 // IMPORTANT: bump CACHE_NAME every time you push a real update (e.g. v2, v3...).
 // That's what makes the browser notice this file changed and refresh the cache.
 // The page itself uses network-first below, so most updates show up without
-// even needing a bump — but bumping is a safe belt-and-braces habit.
+// even needing a bump, but bumping is a safe belt-and-braces habit.
 
 const CACHE_NAME = 'ledger-cache-v3';
 const APP_SHELL = [

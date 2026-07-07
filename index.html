@@ -3171,7 +3171,8 @@ async function openTransactionModal(editId, presetType){
       type = segBtn.dataset.type;
       selectedCat = null;
       ov.querySelectorAll('.seg-btn').forEach(b=>b.classList.remove('active','income','expense'));
-      segBtn.classList.add('active', type!=='transfer' ? type : '');
+      segBtn.classList.add('active');
+      if(type !== 'transfer') segBtn.classList.add(type);
       ov.querySelector('#txn-type-fields').innerHTML = txnTypeFieldsHtml(type, editing && editing.type===type ? editing : null);
       wireTypeFields();
       return;

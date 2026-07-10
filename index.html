@@ -970,7 +970,7 @@ select.field option, .select-native option{ background:var(--bg); color:var(--in
    ========================================================================= */
 
 /* ---------- tiny IndexedDB wrapper ---------- */
-const APP_BUILD = 42; // keep in sync with CACHE_NAME in service-worker.js
+const APP_BUILD = 43; // keep in sync with CACHE_NAME in service-worker.js
 const DB_NAME = 'ledgerDB';
 const DB_VERSION = 5;
 let dbPromise = null;
@@ -2089,7 +2089,7 @@ function toggleLedgerSelect(id, rowEl){
 
 function updateSelBar(){
   const cnt = document.getElementById('sel-count');
-  if(cnt) cnt.textContent = ledgerSelectedIds.size + ' selected';
+  if(cnt) cnt.textContent = ledgerSelectedIds.size ? (ledgerSelectedIds.size + ' selected') : 'TAP ROWS TO SELECT';
   const del = document.getElementById('ledger-sel-delete');
   if(del) del.disabled = ledgerSelectedIds.size === 0;
 }
@@ -2194,8 +2194,9 @@ async function renderLedger(){
     </div>
     ${state.ledgerSelectMode ? `
     <div style="display:flex; gap:8px; margin-bottom:14px; align-items:center;">
-      <div style="flex:1; font-family:var(--font-mono); font-size:11px; letter-spacing:0.04em; color:var(--ink-dim);">TAP ROWS TO SELECT</div>
-      <button class="btn" id="ledger-select-cancel" style="margin:0; width:auto; padding:0 18px;">Done</button>
+      <div style="flex:1; font-family:var(--font-mono); font-size:11px; letter-spacing:0.04em; color:var(--ink-dim);" id="sel-count">TAP ROWS TO SELECT</div>
+      <button class="btn danger" id="ledger-sel-delete" style="margin:0; width:auto; padding:0 16px;" disabled>Delete</button>
+      <button class="btn" id="ledger-select-cancel" style="margin:0; width:auto; padding:0 16px;">Done</button>
     </div>
     ` : `
     <div style="display:flex; gap:8px; margin-bottom:14px;">
@@ -2227,13 +2228,7 @@ async function renderLedger(){
       <div class="receipt-day">${dayLabel(d)}</div>
       <ul class="receipt ${state.ledgerSelectMode?'selectmode':''}">${groups[d].map(t=>txnRowHtml(t)).join('')}</ul>
     `).join('') : emptyState('◌', 'No transactions match this view.', 'Log a transaction')}
-    ${state.ledgerSelectMode ? `
-    <div style="height:96px;"></div>
-    <div class="sel-bar" id="ledger-sel-bar">
-      <span id="sel-count">0 selected</span>
-      <button class="btn danger" id="ledger-sel-delete" style="margin:0; width:auto; padding:0 20px;" disabled>Delete</button>
-    </div>
-    ` : ''}
+
   `;
 }
 

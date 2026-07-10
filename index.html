@@ -22,6 +22,7 @@
   --glow-2:rgba(139,92,246,0.14);
   --surface:rgba(255,255,255,0.055);
   --surface-2:rgba(22,26,44,0.88);
+  --panel-solid:#0C0F1E;
   --surface-3:rgba(255,255,255,0.12);
   --paper:#EDF0FA;
   --ink:#EDF0FA;
@@ -890,8 +891,7 @@ select.field option, .select-native option{ background:var(--bg); color:var(--in
   bottom:calc(90px + var(--safe-bottom));
   width:calc(100% - 32px); max-width:520px;
   display:flex; align-items:center; justify-content:space-between; gap:12px;
-  background:var(--surface-2); border:1px solid var(--line-strong);
-  backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
+  background:var(--panel-solid); border:1px solid var(--line-strong);
   padding:10px 12px 10px 18px; border-radius:16px;
   box-shadow:var(--card-shadow); z-index:150;
 }
@@ -970,7 +970,7 @@ select.field option, .select-native option{ background:var(--bg); color:var(--in
    ========================================================================= */
 
 /* ---------- tiny IndexedDB wrapper ---------- */
-const APP_BUILD = 41; // keep in sync with CACHE_NAME in service-worker.js
+const APP_BUILD = 42; // keep in sync with CACHE_NAME in service-worker.js
 const DB_NAME = 'ledgerDB';
 const DB_VERSION = 5;
 let dbPromise = null;
@@ -1146,6 +1146,7 @@ function applyTheme(key){
   root.setProperty('--glow-2', t.glow2);
   root.setProperty('--surface', dark ? 'rgba(255,255,255,0.055)' : 'rgba(255,255,255,0.66)');
   root.setProperty('--surface-2', hexToRgba(dark ? t.bg : '#FFFFFF', 0.96));
+  root.setProperty('--panel-solid', dark ? t.bg : '#FFFFFF');
   root.setProperty('--surface-3', dark ? 'rgba(255,255,255,0.12)' : 'rgba(17,24,39,0.07)');
   root.setProperty('--paper', t.ink);
   root.setProperty('--ink', t.ink);
@@ -2227,7 +2228,7 @@ async function renderLedger(){
       <ul class="receipt ${state.ledgerSelectMode?'selectmode':''}">${groups[d].map(t=>txnRowHtml(t)).join('')}</ul>
     `).join('') : emptyState('◌', 'No transactions match this view.', 'Log a transaction')}
     ${state.ledgerSelectMode ? `
-    <div style="height:74px;"></div>
+    <div style="height:96px;"></div>
     <div class="sel-bar" id="ledger-sel-bar">
       <span id="sel-count">0 selected</span>
       <button class="btn danger" id="ledger-sel-delete" style="margin:0; width:auto; padding:0 20px;" disabled>Delete</button>

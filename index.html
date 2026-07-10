@@ -36,6 +36,8 @@
   --line:rgba(255,255,255,0.09);
   --line-strong:rgba(255,255,255,0.16);
   --glass-edge:rgba(255,255,255,0.22);
+  --card-shadow:0 10px 32px rgba(0,0,0,0.28);
+  --card-shadow-sm:0 8px 24px rgba(0,0,0,0.24);
   --accent:#5EEAD4;
   --accent-dim:rgba(94,234,212,0.18);
   --on-accent:#0A0D1A;
@@ -314,7 +316,7 @@ input,select{font-family:inherit;}
   position:relative;
   backdrop-filter:blur(14px);
   -webkit-backdrop-filter:blur(14px);
-  box-shadow:0 10px 32px rgba(0,0,0,0.28), inset 0 1px 0 var(--glass-edge);
+  box-shadow:var(--card-shadow), inset 0 1px 0 var(--glass-edge);
 }
 .card + .card{margin-top:12px;}
 
@@ -332,7 +334,7 @@ input,select{font-family:inherit;}
   text-align:left;
   backdrop-filter:blur(14px);
   -webkit-backdrop-filter:blur(14px);
-  box-shadow:0 8px 24px rgba(0,0,0,0.24), inset 0 1px 0 var(--glass-edge);
+  box-shadow:var(--card-shadow-sm), inset 0 1px 0 var(--glass-edge);
 }
 .summary-card .lbl{
   font-family:var(--font-mono);
@@ -866,6 +868,46 @@ select.field option, .select-native option{ background:var(--bg); color:var(--in
   background:none; border:none; color:var(--ink-faint); font-family:var(--font-mono);
   font-size:12px; cursor:pointer; padding:0;
 }
+.undobar{
+  position:fixed; left:50%; transform:translateX(-50%);
+  bottom:calc(112px + var(--safe-bottom));
+  display:flex; align-items:center; gap:14px;
+  background:var(--toast-bg); color:var(--toast-ink);
+  backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
+  font-size:13px; font-weight:600;
+  padding:9px 10px 9px 18px; border-radius:30px;
+  z-index:210; opacity:0; transition:opacity 200ms ease, transform 200ms ease;
+  pointer-events:none; max-width:90%;
+}
+.undobar.show{opacity:1; transform:translateX(-50%) translateY(-4px); pointer-events:auto;}
+.undo-action{
+  background:var(--accent); color:var(--on-accent); border:none;
+  font-family:var(--font-mono); font-size:12px; font-weight:700; letter-spacing:0.04em;
+  padding:7px 16px; border-radius:20px; cursor:pointer; flex:none;
+}
+.sel-bar{
+  position:fixed; left:50%; transform:translateX(-50%);
+  bottom:calc(90px + var(--safe-bottom));
+  width:calc(100% - 32px); max-width:520px;
+  display:flex; align-items:center; justify-content:space-between; gap:12px;
+  background:var(--surface-2); border:1px solid var(--line-strong);
+  backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
+  padding:10px 12px 10px 18px; border-radius:16px;
+  box-shadow:var(--card-shadow); z-index:150;
+}
+.sel-bar #sel-count{ font-family:var(--font-mono); font-size:12.5px; color:var(--ink-dim); }
+.receipt.selectmode .txn-row{ padding-left:32px; position:relative; }
+.receipt.selectmode .txn-row::before{
+  content:''; position:absolute; left:2px; top:50%; transform:translateY(-50%);
+  width:19px; height:19px; border-radius:50%;
+  border:1.5px solid var(--line-strong); background:var(--surface);
+  display:flex; align-items:center; justify-content:center;
+  font-size:11px; font-weight:700; color:var(--on-accent);
+}
+.receipt.selectmode .txn-row.selected::before{
+  content:'\2713'; background:var(--accent); border-color:var(--accent);
+}
+.receipt.selectmode .txn-row.selected{ background:var(--accent-dim); }
 </style>
 </head>
 <body>
@@ -918,6 +960,7 @@ select.field option, .select-native option{ background:var(--bg); color:var(--in
 <div id="lock-root"></div>
 <div id="tutorial-root"></div>
 <div class="toast" id="toast"></div>
+<div class="undobar" id="undobar"></div>
 
 <script>
 /* =========================================================================
@@ -927,7 +970,7 @@ select.field option, .select-native option{ background:var(--bg); color:var(--in
    ========================================================================= */
 
 /* ---------- tiny IndexedDB wrapper ---------- */
-const APP_BUILD = 36; // keep in sync with CACHE_NAME in service-worker.js
+const APP_BUILD = 41; // keep in sync with CACHE_NAME in service-worker.js
 const DB_NAME = 'ledgerDB';
 const DB_VERSION = 5;
 let dbPromise = null;
@@ -1120,6 +1163,8 @@ function applyTheme(key){
   root.setProperty('--line', dark ? 'rgba(255,255,255,0.09)' : 'rgba(17,24,39,0.11)');
   root.setProperty('--line-strong', dark ? 'rgba(255,255,255,0.16)' : 'rgba(17,24,39,0.19)');
   root.setProperty('--glass-edge', dark ? 'rgba(255,255,255,0.22)' : 'rgba(255,255,255,0.95)');
+  root.setProperty('--card-shadow', dark ? '0 10px 32px rgba(0,0,0,0.28)' : '0 3px 12px rgba(17,24,39,0.055)');
+  root.setProperty('--card-shadow-sm', dark ? '0 8px 24px rgba(0,0,0,0.24)' : '0 2px 8px rgba(17,24,39,0.045)');
   root.setProperty('--bar-bg', hexToRgba(t.bg, dark ? 0.78 : 0.86));
   root.setProperty('--bar-bg-soft', hexToRgba(t.bg, dark ? 0.45 : 0.66));
   root.setProperty('--toast-bg', dark ? 'rgba(255,255,255,0.92)' : 'rgba(17,24,39,0.94)');
@@ -1163,6 +1208,7 @@ const state = {
   ledgerCategory: 'all',
   ledgerAccount: 'all',
   ledgerSearch: '',
+  ledgerSelectMode: false,
   analyticsRange: 6,
   analyticsAccount: 'all',
   analyticsSlice: 'category',   // category | account | currency | weekday
@@ -1808,6 +1854,7 @@ async function eyebrowContextFor(tab){
 
 async function renderView(){
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === state.tab));
+  if(state.tab !== 'ledger' && state.ledgerSelectMode){ state.ledgerSelectMode = false; ledgerSelectedIds.clear(); }
   if(state.tab !== 'dashboard') armBack();
   const meta = TAB_META[state.tab];
   topbarEyebrow.innerHTML = '<span class="eyebrow-ring" aria-hidden="true"></span><span id="eyebrow-text"></span>';
@@ -2004,6 +2051,120 @@ function emptyState(glyph, msg, actionLabel, kind){
 }
 
 /* ---------- LEDGER ---------- */
+/* ---------- ledger delete: swipe + multi-select, both with undo ---------- */
+let ledgerSelectedIds = new Set();
+
+function showUndo(message, onUndo){
+  const bar = document.getElementById('undobar');
+  if(!bar) return;
+  bar.innerHTML = '';
+  const span = document.createElement('span');
+  span.textContent = message;
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'undo-action';
+  btn.textContent = 'Undo';
+  bar.appendChild(span);
+  bar.appendChild(btn);
+  bar.classList.add('show');
+  clearTimeout(showUndo._t);
+  const hide = () => { bar.classList.remove('show'); clearTimeout(showUndo._t); };
+  btn.addEventListener('click', async () => { hide(); await onUndo(); });
+  showUndo._t = setTimeout(hide, 5000);
+}
+
+function handleTxnRowClick(el){
+  const id = parseInt(el.dataset.edit, 10);
+  if(state.tab === 'ledger' && state.ledgerSelectMode){ toggleLedgerSelect(id, el); return; }
+  if(el._suppressClick){ el._suppressClick = false; return; }
+  openTransactionModal(id);
+}
+
+function toggleLedgerSelect(id, rowEl){
+  if(ledgerSelectedIds.has(id)){ ledgerSelectedIds.delete(id); if(rowEl) rowEl.classList.remove('selected'); }
+  else { ledgerSelectedIds.add(id); if(rowEl) rowEl.classList.add('selected'); }
+  updateSelBar();
+}
+
+function updateSelBar(){
+  const cnt = document.getElementById('sel-count');
+  if(cnt) cnt.textContent = ledgerSelectedIds.size + ' selected';
+  const del = document.getElementById('ledger-sel-delete');
+  if(del) del.disabled = ledgerSelectedIds.size === 0;
+}
+
+async function deleteTxnById(id){
+  const obj = await dbGet('transactions', id);
+  if(!obj) return;
+  await dbDelete('transactions', id);
+  await renderView();
+  showUndo('Transaction deleted', async () => { await dbPut('transactions', obj); await renderView(); });
+}
+
+async function deleteSelectedLedger(){
+  const ids = Array.from(ledgerSelectedIds);
+  if(!ids.length) return;
+  const deleted = [];
+  for(const id of ids){
+    const obj = await dbGet('transactions', id);
+    if(obj){ deleted.push(obj); await dbDelete('transactions', id); }
+  }
+  state.ledgerSelectMode = false;
+  ledgerSelectedIds.clear();
+  await renderView();
+  const n = deleted.length;
+  showUndo(n + (n === 1 ? ' transaction deleted' : ' transactions deleted'), async () => {
+    for(const obj of deleted){ await dbPut('transactions', obj); }
+    await renderView();
+  });
+}
+
+function attachLedgerSwipe(viewRoot){
+  viewRoot.querySelectorAll('.receipt:not(.selectmode) .txn-row[data-edit]').forEach(row => {
+    let startX = 0, startY = 0, dx = 0, dragging = false, decided = false, horizontal = false;
+    const THRESH = 72;
+    row.addEventListener('touchstart', (e) => {
+      if(state.ledgerSelectMode) return;
+      const t = e.touches[0];
+      startX = t.clientX; startY = t.clientY; dx = 0;
+      dragging = true; decided = false; horizontal = false;
+      row._suppressClick = false;
+      row.style.transition = 'none';
+    }, { passive:true });
+    row.addEventListener('touchmove', (e) => {
+      if(!dragging || state.ledgerSelectMode) return;
+      const t = e.touches[0];
+      const mx = t.clientX - startX, my = t.clientY - startY;
+      if(!decided){
+        if(Math.abs(mx) > 10 || Math.abs(my) > 10){ decided = true; horizontal = Math.abs(mx) > Math.abs(my) + 4; }
+      }
+      if(decided && horizontal){
+        if(e.cancelable) e.preventDefault();
+        dx = Math.min(0, mx);
+        row.style.transform = 'translateX(' + dx + 'px)';
+        row.style.opacity = String(Math.max(0.3, 1 - Math.abs(dx) / 220));
+        row._suppressClick = true;
+      }
+    }, { passive:false });
+    const finish = () => {
+      if(!dragging) return;
+      dragging = false;
+      row.style.transition = 'transform 160ms ease, opacity 160ms ease';
+      if(horizontal && Math.abs(dx) >= THRESH){
+        row.style.transform = 'translateX(-100%)';
+        row.style.opacity = '0';
+        const id = parseInt(row.dataset.edit, 10);
+        setTimeout(() => { deleteTxnById(id); }, 150);
+      } else {
+        row.style.transform = '';
+        row.style.opacity = '';
+      }
+    };
+    row.addEventListener('touchend', finish);
+    row.addEventListener('touchcancel', finish);
+  });
+}
+
 async function renderLedger(){
   const txns = await getTransactionsForMonth(state.month);
   let filtered = txns;
@@ -2030,7 +2191,17 @@ async function renderLedger(){
       <span class="lbl">${monthLabel(state.month)}</span>
       <button class="icon-btn" data-month="1"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button>
     </div>
-    <button class="btn" id="bulk-import-btn" style="margin-bottom:14px;">📷 Import bank slips</button>
+    ${state.ledgerSelectMode ? `
+    <div style="display:flex; gap:8px; margin-bottom:14px; align-items:center;">
+      <div style="flex:1; font-family:var(--font-mono); font-size:11px; letter-spacing:0.04em; color:var(--ink-dim);">TAP ROWS TO SELECT</div>
+      <button class="btn" id="ledger-select-cancel" style="margin:0; width:auto; padding:0 18px;">Done</button>
+    </div>
+    ` : `
+    <div style="display:flex; gap:8px; margin-bottom:14px;">
+      <button class="btn" id="bulk-import-btn" style="margin:0; flex:1;">📷 Import bank slips</button>
+      ${filtered.length ? `<button class="btn" id="ledger-select-toggle" style="margin:0; width:auto; padding:0 18px;">Select</button>` : ''}
+    </div>
+    `}
 
     <div class="search-box">
       <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
@@ -2053,8 +2224,15 @@ async function renderLedger(){
 
     ${dateKeys.length ? dateKeys.map(d => `
       <div class="receipt-day">${dayLabel(d)}</div>
-      <ul class="receipt">${groups[d].map(t=>txnRowHtml(t)).join('')}</ul>
+      <ul class="receipt ${state.ledgerSelectMode?'selectmode':''}">${groups[d].map(t=>txnRowHtml(t)).join('')}</ul>
     `).join('') : emptyState('◌', 'No transactions match this view.', 'Log a transaction')}
+    ${state.ledgerSelectMode ? `
+    <div style="height:74px;"></div>
+    <div class="sel-bar" id="ledger-sel-bar">
+      <span id="sel-count">0 selected</span>
+      <button class="btn danger" id="ledger-sel-delete" style="margin:0; width:auto; padding:0 20px;" disabled>Delete</button>
+    </div>
+    ` : ''}
   `;
 }
 
@@ -4016,16 +4194,214 @@ async function suggestCategoryFromHistory(note, type){
   return candidates.length ? candidates[0].category : null;
 }
 
+/* ---------- slip image preprocessing + QR bank read (build 37) ----------
+   Two easy accuracy wins that run before the heuristics above:
+   1) Preprocess the photo (greyscale, percentile contrast stretch, sensible
+      resize) so Tesseract sees cleaner, right-sized text. No hard black/white
+      threshold on purpose: Thai tone marks are thin and a bad threshold erases
+      them, which hurts Thai matching more than it helps.
+   2) Decode the slip's verify mini-QR fully on-device with jsQR. That QR only
+      carries the sending bank id and a transaction reference, never the amount,
+      so it cannot fill the money fields, but the bank id nails which account the
+      money left from far more reliably than reading bank names off the text. */
+
+const OCR_MIN_CONFIDENCE = 55;         // overall Tesseract mean below this => send to review
+const OCR_AMOUNT_MIN_CONFIDENCE = 70;  // the amount word itself below this => send to review
+
+function isLowConfidence(parsed){
+  if(!parsed) return false;
+  if(parsed.ocrConfidence != null && parsed.ocrConfidence < OCR_MIN_CONFIDENCE) return true;
+  if(parsed.amountConfidence != null && parsed.amountConfidence < OCR_AMOUNT_MIN_CONFIDENCE) return true;
+  return false;
+}
+
+function loadJsQR(){
+  if(window.jsQR) return Promise.resolve();
+  if(loadJsQR._p) return loadJsQR._p;
+  loadJsQR._p = new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js';
+    s.onload = () => resolve();
+    s.onerror = () => reject(new Error('qr reader failed to load'));
+    document.head.appendChild(s);
+  });
+  return loadJsQR._p;
+}
+
+function loadSlipImage(file){
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error('read failed'));
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onerror = () => reject(new Error('decode failed'));
+      img.onload = () => resolve(img);
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+// Greyscale + 2nd/98th percentile contrast stretch, resized so the long edge is
+// about 2000px (upscale is capped at 2x so small screenshots sharpen without
+// turning to mush; big photos shrink, which also speeds Tesseract up).
+function buildOcrCanvas(img){
+  const longEdge = Math.max(img.width, img.height) || 1;
+  let scale = 2000 / longEdge;
+  if(scale > 2) scale = 2;
+  const w = Math.max(1, Math.round(img.width * scale));
+  const h = Math.max(1, Math.round(img.height * scale));
+  const cv = document.createElement('canvas');
+  cv.width = w; cv.height = h;
+  const ctx = cv.getContext('2d', { willReadFrequently: true });
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
+  ctx.drawImage(img, 0, 0, w, h);
+  const id = ctx.getImageData(0, 0, w, h);
+  const d = id.data;
+  const hist = new Uint32Array(256);
+  for(let i=0; i<d.length; i+=4){
+    const g = (d[i]*0.299 + d[i+1]*0.587 + d[i+2]*0.114) | 0;
+    d[i] = d[i+1] = d[i+2] = g;
+    hist[g]++;
+  }
+  const total = w * h;
+  const loTarget = total * 0.02, hiTarget = total * 0.98;
+  let cum = 0, lo = 0, hi = 255, foundLo = false;
+  for(let v=0; v<256; v++){
+    cum += hist[v];
+    if(!foundLo && cum >= loTarget){ lo = v; foundLo = true; }
+    if(cum >= hiTarget){ hi = v; break; }
+  }
+  if(hi <= lo){ lo = 0; hi = 255; }
+  const range = hi - lo;
+  for(let i=0; i<d.length; i+=4){
+    let g = (d[i] - lo) * 255 / range;
+    g = g < 0 ? 0 : (g > 255 ? 255 : g);
+    d[i] = d[i+1] = d[i+2] = g;
+  }
+  ctx.putImageData(id, 0, 0);
+  return cv;
+}
+
+// Untouched (not contrast-stretched) pixels for the QR pass; finder patterns
+// read best from the plain image. Cap the long edge so memory stays sane.
+function buildQrImageData(img){
+  const longEdge = Math.max(img.width, img.height) || 1;
+  const scale = longEdge > 1600 ? 1600 / longEdge : 1;
+  const w = Math.max(1, Math.round(img.width * scale));
+  const h = Math.max(1, Math.round(img.height * scale));
+  const cv = document.createElement('canvas');
+  cv.width = w; cv.height = h;
+  const ctx = cv.getContext('2d', { willReadFrequently: true });
+  ctx.drawImage(img, 0, 0, w, h);
+  return ctx.getImageData(0, 0, w, h);
+}
+
+// Flat EMVCo tag-length-value walk. Returns a { tag: value } map or null.
+function tlvParse(s){
+  const out = {};
+  let i = 0, count = 0;
+  while(i + 4 <= s.length){
+    const tag = s.substr(i, 2); i += 2;
+    const len = parseInt(s.substr(i, 2), 10); i += 2;
+    if(isNaN(len) || i + len > s.length) break;
+    out[tag] = s.substr(i, len); i += len;
+    count++;
+  }
+  return count ? out : null;
+}
+
+// The slip verify mini-QR: template tag 00 holds subtag 00 = "000001" (the
+// Verify Pay Slip marker), subtag 01 = 3-digit sending bank id, 02 = trans ref.
+function parseSlipVerifyQr(payload){
+  const top = tlvParse(payload);
+  if(!top || !top['00']) return null;
+  const sub = tlvParse(top['00']);
+  if(!sub || sub['00'] !== '000001') return null;
+  return { sendingBankId: sub['01'] || null, transRef: sub['02'] || null };
+}
+
+// Thai clearing codes -> Halo's internal bank keys (only the banks Halo knows).
+const SLIP_QR_BANK_CODES = {
+  '002':'bbl', '004':'kbank', '006':'ktb', '011':'ttb',
+  '014':'scb', '025':'bay', '030':'gsb', '069':'dime',
+};
+
+function bankFromSlipQr(imageData){
+  if(!window.jsQR || !imageData) return null;
+  let code = null;
+  try{ code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts:'attemptBoth' }); }
+  catch(e){ return null; }
+  if(!code || !code.data) return null;
+  const sv = parseSlipVerifyQr(String(code.data).replace(/\s+/g, ''));
+  if(!sv || !sv.sendingBankId) return null;
+  const key = SLIP_QR_BANK_CODES[sv.sendingBankId];
+  if(!key) return null;
+  const meta = SLIP_BANKS.find(b => b.key === key);
+  return { key, name: meta ? meta.name : key };
+}
+
+// Confidence of the specific word Tesseract read as the amount (min across
+// matching tokens). Null when there is nothing to compare against.
+function amountWordConfidence(words, amount){
+  if(!words || !words.length || amount == null) return null;
+  const targetPlain = amount.toFixed(2).replace(/,/g, '');
+  let best = null;
+  for(const w of words){
+    const t = (w.text || '').replace(/[^0-9.,]/g, '');
+    if(!t) continue;
+    if(t.replace(/,/g, '').includes(targetPlain)){
+      if(best === null || w.confidence < best) best = w.confidence;
+    }
+  }
+  return best;
+}
+
 async function recognizeSlip(file, onProgress){
   await loadTesseract();
-  const { data } = await Tesseract.recognize(file, 'eng+tha', {
+
+  // Decode the image once, then run the QR pass and preprocess for OCR. If any
+  // of this fails we fall back to handing the raw file straight to Tesseract.
+  let img = null;
+  try{ img = await loadSlipImage(file); }catch(e){ img = null; }
+
+  let qrBank = null;
+  if(img){
+    try{
+      await loadJsQR();
+      qrBank = bankFromSlipQr(buildQrImageData(img));
+    }catch(e){ qrBank = null; }
+  }
+
+  // Preprocess to a data URL (a broadly supported Tesseract input). If the
+  // preprocessed image trips up Tesseract on any device, fall back to the raw
+  // file, which is exactly how earlier builds fed the scanner. Only a genuine
+  // failure on the raw file bubbles up as "could not read".
+  let ocrSource = file;
+  if(img){
+    try{ ocrSource = buildOcrCanvas(img).toDataURL('image/png'); }catch(e){ ocrSource = file; }
+  }
+  const ocrOpts = {
     logger: (m) => {
       if(onProgress && m.status === 'recognizing text'){
         onProgress(Math.round((m.progress||0)*100));
       }
     }
-  });
-  return parseSlipText(data.text || '');
+  };
+  let data;
+  try{
+    ({ data } = await Tesseract.recognize(ocrSource, 'eng+tha', ocrOpts));
+  }catch(err){
+    if(ocrSource === file) throw err;
+    ({ data } = await Tesseract.recognize(file, 'eng+tha', ocrOpts));
+  }
+
+  const parsed = parseSlipText(data.text || '');
+  if(qrBank) parsed.bank = qrBank;                 // definitive: QR beats text guessing
+  parsed.ocrConfidence = (typeof data.confidence === 'number') ? data.confidence : null;
+  parsed.amountConfidence = amountWordConfidence(data.words, parsed.amount);
+  return parsed;
 }
 
 async function handleSlipScan(file, ov){
@@ -4058,8 +4434,9 @@ async function handleSlipScan(file, ov){
         if(sel) sel.value = String(acct.id);
       }
     }
+    const lowConf = isLowConfidence(parsed);
     statusEl.textContent = parsed.amount
-      ? `Filled in from the${parsed.bank ? ' ' + parsed.bank.name : ''} slip. Check everything before saving.`
+      ? `Filled in from the${parsed.bank ? ' ' + parsed.bank.name : ''} slip.${lowConf ? ' Read quality was low, double-check the amount and date.' : ' Check everything before saving.'}`
       : "Couldn't find an amount on that slip. Enter it manually.";
   }catch(err){
     statusEl.textContent = 'Could not read that image. Enter the details manually.';
@@ -4104,9 +4481,12 @@ async function openBulkImportModal(){
   const savedInBatch = [];
 
   function reviewCardHtml(item, idx){
-    const reason = item.dup ? 'Possible duplicate' : 'Needs a check';
+    const reason = item.dup ? 'Possible duplicate' : (item.lowConf ? 'Low confidence read' : 'Needs a check');
     return `<div class="card" style="margin-bottom:12px;" data-review="${idx}">
-      <div style="font-family:var(--font-mono); font-size:10.5px; color:${item.dup?'var(--amber)':'var(--ink-faint)'}; margin-bottom:10px;">${reason} · slip ${escapeHtml(item.fileName)}</div>
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:10px;">
+        <div style="font-family:var(--font-mono); font-size:10.5px; color:${(item.dup||item.lowConf)?'var(--amber)':'var(--ink-faint)'};">${reason} · slip ${escapeHtml(item.fileName)}</div>
+        ${item.receiptData ? `<button type="button" class="txt-btn accent rv-preview" style="flex:none; padding:0; white-space:nowrap;">View slip</button>` : ''}
+      </div>
       <div class="field-group">
         <label class="field-label">Amount</label>
         <div class="amount-field"><span class="cur">${state.currency.symbol}</span><input type="number" step="0.01" min="0" class="rv-amount" value="${item.amount!=null?item.amount.toFixed(2):''}"></div>
@@ -4184,12 +4564,15 @@ async function openBulkImportModal(){
         receiptData,
         resolved:false,
         dup:false,
+        lowConf:false,
       };
       cand.dup = cand.amount != null && isLikelyDuplicate({date: cand.date || today, amount: cand.amount}, existingTxns, savedInBatch);
+      cand.lowConf = isLowConfidence(parsed);
       let autoSave;
       if(vmode === 'always'){ autoSave = false; }
       else if(vmode === 'auto'){ autoSave = cand.amount != null && !cand.dup; }
       else { autoSave = cand.amount != null && cand.date != null && !cand.dup; }
+      if(autoSave && cand.lowConf){ autoSave = false; }
       if(autoSave){
         await saveCandidate(cand, cand.amount, cand.date || today, cand.note, cand.categoryGuess || fallbackCat, cand.accountId);
         savedCount++;
@@ -4210,6 +4593,10 @@ async function openBulkImportModal(){
     if(card){
       const idx = parseInt(card.dataset.review,10);
       const item = reviewItems[idx];
+      if(e.target.classList.contains('rv-preview')){
+        if(item.receiptData) openReceiptViewer(item.receiptData);
+        return;
+      }
       if(e.target.classList.contains('rv-skip')){
         item.resolved = true; renderReview(); return;
       }
@@ -4384,7 +4771,7 @@ async function exportCSV(){
 /* ---------- event wiring ---------- */
 function attachViewHandlers(){
   viewRoot.querySelectorAll('[data-edit]').forEach(el => {
-    el.addEventListener('click', () => openTransactionModal(parseInt(el.dataset.edit,10)));
+    el.addEventListener('click', () => handleTxnRowClick(el));
   });
   viewRoot.querySelectorAll('[data-open-add]').forEach(el => {
     el.addEventListener('click', () => openTransactionModal(null));
@@ -4439,6 +4826,14 @@ function attachViewHandlers(){
       let debounce;
       search.addEventListener('input', () => { clearTimeout(debounce); debounce = setTimeout(()=>renderView(), 400); });
     }
+    const selToggle = viewRoot.querySelector('#ledger-select-toggle');
+    if(selToggle) selToggle.addEventListener('click', () => { state.ledgerSelectMode = true; ledgerSelectedIds.clear(); renderView(); });
+    const selCancel = viewRoot.querySelector('#ledger-select-cancel');
+    if(selCancel) selCancel.addEventListener('click', () => { state.ledgerSelectMode = false; ledgerSelectedIds.clear(); renderView(); });
+    const selDelete = viewRoot.querySelector('#ledger-sel-delete');
+    if(selDelete) selDelete.addEventListener('click', deleteSelectedLedger);
+    if(state.ledgerSelectMode) updateSelBar();
+    else attachLedgerSwipe(viewRoot);
   }
 
   if(state.tab === 'board'){
